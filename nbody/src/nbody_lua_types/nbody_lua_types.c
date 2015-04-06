@@ -35,7 +35,8 @@ void registerNBodyTypes(lua_State* luaSt)
 
     registerPotential(luaSt);
     registerHistogramParams(luaSt);
-
+    
+    registerNBodyState(luaSt);
     registerNBodyCtx(luaSt);
 }
 

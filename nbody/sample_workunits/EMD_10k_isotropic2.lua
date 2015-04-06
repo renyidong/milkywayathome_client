@@ -14,7 +14,7 @@ light_r_ratio = arg[4]
 dwarfMass  = arg[5]
 light_mass_ratio = arg[6]
 
-model1Bodies = 10000
+model1Bodies = 10
 totalBodies = model1Bodies
 
 nbodyLikelihoodMethod = "EMD"
@@ -108,7 +108,9 @@ end
 
 function timeStepWrapup(st)
   --Clay's Function, just prints every time it is called. To be used later for additional functionality at the end of each timestep  
-    return st
+        
+ 
+    --return st
 end
 
 

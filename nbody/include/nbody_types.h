@@ -295,7 +295,8 @@ typedef struct MW_ALIGN_TYPE
     int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
     unsigned int maxDepth;   /* Maximum depth before overflow. Used for CL version */
-
+    
+       
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -393,8 +394,7 @@ typedef struct MW_ALIGN_TYPE
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
-    unsigned int stepNumber;  //Keeps track of what time step the simulation is on
-
+    
     Potential pot;
 } NBodyCtx;
 

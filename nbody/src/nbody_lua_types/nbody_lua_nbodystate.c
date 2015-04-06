@@ -302,7 +302,6 @@ static int luaInitNBodyStateCL(lua_State* luaSt)
 
 static const luaL_reg metaMethodsNBodyState[] =
 {
-    { "__gc",       gcNBodyState       },
     { "__eq",       eqNBodyState       },
     { "__tostring", toStringNBodyState },
     { NULL, NULL }
@@ -310,6 +309,7 @@ static const luaL_reg metaMethodsNBodyState[] =
 
 static const luaL_reg methodsNBodyState[] =
 {
+    { "destroy",         gcNBodyState         },
     { "create",          createNBodyState     },
     { "step",            stepNBodyState       },
     { "runSystem",       luaRunSystem         },
@@ -329,7 +329,7 @@ static const Xet_reg_pre gettersNBodyState[] =
 
 static const Xet_reg_pre settersNBodyState[] =
 {
-    { NULL, NULL, 0 }
+    { NULL, NULL, 0}
 };
 
 int registerNBodyState(lua_State* luaSt)

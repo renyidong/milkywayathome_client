@@ -613,33 +613,35 @@ int nbWrapup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {  
     lua_State* luaSt;
     int rc;
+    NBodyState* st_temp = mwMalloc(sizeof(NBodyState));
     
-    luaSt = nbOpenLuaStateWithScript(nbf, NULL);
+    
+    
+    
+    luaSt = nbOpenLuaStateWithScript(nbf, st);
+    //luaL_openlibs(luaSt);
+    //lua_gc(luaSt, LUA_GCSTOP, 0); 
     if (!luaSt)
     {
         return 1;
     }
-
-    /*
-    if (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT)
-        pushPotential(luaSt, &ctx->pot);
-    else
-        lua_pushnil(luaSt);
-    */
     
     getTimeStepWrapup(luaSt);
-    pushNBodyCtx(luaSt, ctx);
-    
+    //pushNBodyCtx(luaSt, ctx);
+    //lua_gc(luaSt, LUA_GCSTOP, st);
+    pushNBodyState(luaSt, st);
     //TODO: check the function call here to pass through 1 parameter on CTX
-    if (lua_pcall(luaSt, 1, 1, 0))
+    if (lua_pcall(luaSt, 1, 0, 0))
     {
         mw_lua_perror(luaSt, "Error evaluating nbWrapup()");
         return 1;
     }
-    *ctx = *expectNBodyCtx(luaSt, lua_gettop(luaSt));
+    luaL_dostring(luaSt, "__gc = nil");
+    lua_settop(luaSt, 0);
+    //expectNBodyState(luaSt, lua_gettop(luaSt));
     //free(temp);
     lua_close(luaSt);
-  return 0;
+    return 0;
 }
 
 int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)

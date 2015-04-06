@@ -112,7 +112,7 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->orbitTrace);
 
     free(st->checkpointResolved);
-
+    
     if (st->potEvalStates)
     {
         for (i = 0; i < nThread; ++i)
