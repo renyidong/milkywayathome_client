@@ -450,12 +450,9 @@ function findNumber(str, name)
    end
 end
 
-function findLikelihood(str, emd)
-   if emd then
-      name = "emd"
-   else
-      name = "search_likelihood"
-   end
+function findLikelihood(str)
+    
+   name = "search_likelihood"
 
    -- likelihood is negated
    return -findNumber(str, name)
