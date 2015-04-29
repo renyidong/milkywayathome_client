@@ -93,10 +93,8 @@ local outputFile = arg[3] or "GeneratedResults.lua"
 local nbody = arg[4] or 10000
 local nIter = arg[5] or 10
 
-local histograms = {"orphan_model_histogram", "model_1_self.hist"}
+local histograms = {"orphan_model_histogram"}
 local nbodies = { nbody }
-
-
 
 for i = 1, nIter do
    generateSampleUnits(outputFile, testName, histograms, nbodies, 1)
