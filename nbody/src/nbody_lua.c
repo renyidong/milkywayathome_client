@@ -611,35 +611,31 @@ static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodySta
 /////////////////////////////////////////////////////////////////////
 int nbWrapup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {  
+    //Initialize LUA state:
     lua_State* luaSt;
-    int rc;
-    NBodyState* st_temp = mwMalloc(sizeof(NBodyState));
-    
-    
-    
-    
+    int rc;        
     luaSt = nbOpenLuaStateWithScript(nbf, st);
-    //luaL_openlibs(luaSt);
-    //lua_gc(luaSt, LUA_GCSTOP, 0); 
     if (!luaSt)
     {
         return 1;
     }
     
+    //Register and push wrapup function to stack:
     getTimeStepWrapup(luaSt);
-    //pushNBodyCtx(luaSt, ctx);
-    //lua_gc(luaSt, LUA_GCSTOP, st);
+    
+    //Push Parameters to stack:
+    
+    pushNBodyCtx(luaSt, ctx);
     pushNBodyState(luaSt, st);
-    //TODO: check the function call here to pass through 1 parameter on CTX
-    if (lua_pcall(luaSt, 1, 0, 0))
+    
+    //Execute LUA code:
+    if (lua_pcall(luaSt, 2, 0, 0))
     {
         mw_lua_perror(luaSt, "Error evaluating nbWrapup()");
         return 1;
     }
-    luaL_dostring(luaSt, "__gc = nil");
-    lua_settop(luaSt, 0);
-    //expectNBodyState(luaSt, lua_gettop(luaSt));
-    //free(temp);
+    
+    //Close LUA state:
     lua_close(luaSt);
     return 0;
 }

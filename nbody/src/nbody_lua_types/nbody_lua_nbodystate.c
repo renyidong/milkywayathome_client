@@ -322,8 +322,12 @@ static const luaL_reg methodsNBodyState[] =
     { NULL, NULL }
 };
 
+
 static const Xet_reg_pre gettersNBodyState[] =
 {
+    { "step",            getUInt,       offsetof(NBodyState, step)    },
+    { "nbody",           getInt,        offsetof(NBodyState, nbody)   },
+    { "effNBody",        getInt,        offsetof(NBodyState, effNBody)},
     { NULL, NULL, 0 }
 };
 

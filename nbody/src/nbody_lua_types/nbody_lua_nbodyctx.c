@@ -212,6 +212,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
+    { "nStep",           getUInt,       offsetof(NBodyCtx, nStep)       },
     { NULL, NULL, 0 }
 };
 

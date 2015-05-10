@@ -106,11 +106,11 @@ function makeHistogram()
    return HistogramParams.create()
 end
 
-function timeStepWrapup(st)
-  --Clay's Function, just prints every time it is called. To be used later for additional functionality at the end of each timestep  
-        
- 
-    --return st
+--Adds end-timestep functionality:
+--Code placed within this function will be
+--run every timestep.
+function timeStepWrapup(ctx, st)
+    print("THE SIMULATION IS: ",st.step/ctx.nStep*100,"% COMPLETE") 
 end
 
 
