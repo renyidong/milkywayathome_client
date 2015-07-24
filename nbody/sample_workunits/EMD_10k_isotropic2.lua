@@ -110,7 +110,12 @@ end
 --Code placed within this function will be
 --run every timestep.
 function timeStepWrapup(ctx, st)
-    print("THE SIMULATION IS: ",st.step/ctx.nStep*100,"% COMPLETE") 
+    velocity = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+    KE = 0
+    M = 1
+    for i in velocity do
+        KE = KE + (0.5*M*i^2)
+    end
 end
 
 

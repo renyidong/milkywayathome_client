@@ -878,3 +878,16 @@ void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, con
     lua_setfield(luaSt, table, name);
 }
 
+//TEST CODE:
+/*int getBody(lua_State* luaSt, Body* v){
+    int n = sizeof(v)/(sizeof(v[0]));   
+    lua_createtable(luaSt, n, 0);
+    int newTable = lua_gettop(luaSt);
+    int index = 1;
+    for(int i = 0; i < n; ++i){
+        Body tempBody = *(Body*)v[i];
+    }
+
+
+    //lua_pushType(luaSt,"Body", sizeof(Body), *(Body*) v);
+}*/
