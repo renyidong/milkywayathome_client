@@ -1415,10 +1415,7 @@ void NBodyGraphics::mainLoop()
         }
 
         this->display();
-        if(printFrames)
-        {
-            printFrame();
-        }
+        printFrame();
         glfwSwapBuffers(this->window);
     }
 }
