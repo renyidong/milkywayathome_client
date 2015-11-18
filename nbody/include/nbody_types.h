@@ -214,7 +214,7 @@ typedef struct
         cl_mem yy, yz;
         cl_mem zz;
     } quad;
-
+    
     cl_mem treeStatus;
 
     /* Just valid non-aliasing, read only buffers.
@@ -233,10 +233,13 @@ typedef struct
 } NBodyBuffers;
 
 
+
 /* 8 used by tree + 1 with quad, 2 used by exact. 1 shared. */
 #define NKERNELS 11
 
 
+
+//Old Kernels struct:
 typedef struct
 {
     cl_kernel boundingBox;
@@ -248,12 +251,39 @@ typedef struct
     cl_kernel quadMoments;
     cl_kernel forceCalculation;
     cl_kernel integration;
+    
+    cl_kernel testAddition;
 
-    /* Used by exact one only */
+    //Used by exact one only
     cl_kernel forceCalculation_Exact;
 } NBodyKernels;
 
 #endif /* NBODY_OPENCL */
+
+
+//////////////////////////////////////////
+//Dynamic GPU Array for calculation data
+//////////////////////////////////////////
+typedef struct
+{
+    real rX, rY, rZ;    //Stores radius of body calculation
+    real mass;      //Stores mass of body calculation (-1 if unused)
+    NBodyQuadMatrix Q;
+    unsigned int position;  //Stores position in tree that this body is found
+}gpuVec;
+
+typedef struct
+{
+    gpuVec *data; //Create an array of gpuVec structs to push to GPU
+    size_t used;
+    size_t size;
+}gpuArray;
+
+//void initGPUArray(gpuArray *a, size_t initialSize);
+//void insertGPUArray(gpuArray *a, gpuVec element);
+//void freeGPUArray(gpuArray *a);
+
+
 
 
 typedef struct

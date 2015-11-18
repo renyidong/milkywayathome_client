@@ -126,7 +126,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     ids = mwGetAllPlatformIDs(&nPlatform);
     if (!ids)
         return MW_CL_ERROR;
-
+    
     if (mwIsFirstRun())
     {
         mwPrintPlatforms(ids, nPlatform);
@@ -147,6 +147,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
         platformChoice = 0;
     }
 
+    
     if (platformChoice >= nPlatform)
     {
         mw_printf("Didn't find preferred platform\n");
@@ -163,6 +164,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
         return MW_CL_ERROR;
     }
 
+    
     err = mwSelectDevice(ci, devs, clr, nDev);
     free(ids);
     free(devs);
@@ -183,6 +185,7 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
 {
     cl_int err;
 
+    
     err = mwGetCLInfo(ci, clr);
     if (err != CL_SUCCESS)
     {
@@ -229,7 +232,7 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
     {
         ci->pollingMode = clr->pollingMode;
     }
-
+    
     return mwCreateCtxQueue(ci, CL_FALSE, clr->enableProfiling);
 }
 

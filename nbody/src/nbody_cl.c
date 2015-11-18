@@ -694,7 +694,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
-    kernels->boundingBox = mwCreateKernel(program, "boundingBox");
+    //kernels->boundingBox = mwCreateKernel(program, "boundingBox");
     kernels->buildTreeClear = mwCreateKernel(program, "buildTreeClear");
     kernels->buildTree = mwCreateKernel(program, "buildTree");
     kernels->summarizationClear = mwCreateKernel(program, "summarizationClear");
@@ -704,6 +704,7 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
     kernels->forceCalculation = mwCreateKernel(program, "forceCalculation");
     kernels->integration = mwCreateKernel(program, "integration");
     kernels->forceCalculation_Exact = mwCreateKernel(program, "forceCalculation_Exact");
+    kernels->testAddition = mwCreateKernel(program, "testAddition");
 
     return (   kernels->boundingBox
             && kernels->buildTreeClear
@@ -1558,6 +1559,7 @@ static cl_int nbRunPreStep(NBodyState* st)
 
 static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
+    printf("HERE \n");
     NBodyStatus rc = NBODY_SUCCESS;
     cl_int err;
 
@@ -2205,6 +2207,7 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
+    printf("nbRunSystemCL \n");
     NBodyStatus rc;
     cl_int err;
 

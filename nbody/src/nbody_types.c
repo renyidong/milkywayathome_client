@@ -124,6 +124,7 @@ int destroyNBodyState(NBodyState* st)
     }
 
   #if NBODY_OPENCL
+   
 
     if (st->ci)
     {
@@ -164,6 +165,36 @@ int destroyNBodyState(NBodyState* st)
     return failed;
 }
 
+//////////////////////////
+//BEGIN Dynamic GPU Array:
+//////////////////////////
+void initGPUArray(gpuArray *a, size_t initialSize)
+{
+    a->data = (gpuVec *)mwCalloc(initialSize, sizeof(gpuVec));
+    a->used = 0;
+    a->size = initialSize;
+}
+
+void insertGPUArray(gpuArray *a, gpuVec element)
+{
+    if(a->used == a->size)
+    {
+        a->size *= 2;
+        a->data = (gpuVec *)mwRealloc(a, a->size*sizeof(gpuVec));
+    }
+    a->data[a->used++] = element;
+}
+
+void freeGPUArray(gpuArray *a)
+{
+    free(a->data);
+    a->data = NULL;
+    a->used = a->size = 0;
+}
+//////////////////////////
+//END Dynamic GPU Array
+//////////////////////////
+    
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
@@ -209,8 +240,9 @@ NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
 
     err = mwSetupCL(st->ci, clr);
     if (err != CL_SUCCESS)
+    {
         return NBODY_CL_ERROR;
-
+    }
     return NBODY_SUCCESS;
 }
 

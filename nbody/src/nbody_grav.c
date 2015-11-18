@@ -24,6 +24,7 @@
 #include "nbody_grav.h"
 #include "milkyway_util.h"
 
+
 #ifdef _OPENMP
   #include <omp.h>
 #endif /* _OPENMP */
@@ -45,14 +46,35 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
-
+    gpuArray gpuData;
+    initGPUArray(gpuData, 2);
+    
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
     while (q != NULL)               /* while not at end of scan */
     {
+        gpuVec temp;
+        
         mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
         real drSq = mw_sqrv(dr);               /* and distance squared */
-
+        
+        temp.rX = dr.x;
+        temp.rY = dr.y;
+        temp.rZ = dr.z;
+        
+        
+        //Create array, with radius, and then either mass or quad moment
+        //
+        //
+        //      /--------------------------------------------\
+        //      | 1  | 1  | 0  | 0  | 1  | 1  | 0  | 0  | 0  | bodyValue (1 if body, 0 if cell)
+        //      |--------------------------------------------|
+        //      | r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8 | r9 | radius to CoM
+        //      |--------------------------------------------|
+        //      | m1 | m2 | q3 | q4 | m5 | m6 | q7 | q8 | q9 | Mass or QuadMoment
+        //      \--------------------------------------------/
+        //
+        
         if (isBody(q) || (drSq >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
         {
             if (mw_likely((const Body*) q != p))   /* self-interaction? */
@@ -60,7 +82,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 real drab, phii, mor3;
 
                 /* Compute gravity */
-
+                //This can be moved to GPU
                 drSq += ctx->eps2;   /* use standard softening */
                 drab = mw_sqrt(drSq);
                 phii = Mass(q) / drab;
@@ -69,11 +91,17 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 acc0.x += mor3 * dr.x;
                 acc0.y += mor3 * dr.y;
                 acc0.z += mor3 * dr.z;
+                
+                temp.mass = Mass(q);
 
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
                     real dr5inv, drQdr, phiQ;
                     mwvector Qdr;
+                    
+                    temp.Q = Quad(q);
+                    temp.mass = -1;
+                    
 
                     /* form Q * dr */
                     Qdr.x = Quad(q).xx * dr.x + Quad(q).xy * dr.y + Quad(q).xz * dr.z;
