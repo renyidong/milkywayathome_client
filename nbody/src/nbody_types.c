@@ -256,7 +256,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
         mw_printf("CL not setup for CL state initialization\n");
         return NBODY_CONSISTENCY_ERROR;
     }
-
+    
     /* Bodies must be set before trying to use this */
     if (!st->bodytab)
     {
@@ -269,7 +269,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
         mw_printf("Cannot use Lua potential with OpenCL\n");
         return NBODY_UNSUPPORTED;
     }
-
+    
     devInfo = &st->ci->di;
 
     if (!nbCheckDevCapabilities(devInfo, ctx, st->nbody))
@@ -284,11 +284,12 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 
     st->usesConsistentMemory =  (mwIsNvidiaGPUDevice(devInfo) && mwNvidiaInlinePTXAvailable(st->ci->plat))
                               || mwDeviceHasConsistentMemory(devInfo);
-
+                              
     if (nbLoadKernels(ctx, st))
         return NBODY_CL_ERROR;
 
     err = nbCreateBuffers(ctx, st);
+    printf(">>>>>>>>>BROKEN HERE<<<<<<<<<<\n");
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
@@ -306,7 +307,6 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
         mw_printf("Error marshalling initial bodies\n");
         return NBODY_CL_ERROR;
     }
-
     return NBODY_SUCCESS;
 }
 

@@ -123,6 +123,7 @@ cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_
 }
 
 
+//TODO: EDIT FOR CURRENT WORKGROUPS:
 static void nbPrintNBodyWorkSizes(const NBodyWorkSizes* ws)
 {
     mw_printf("\n"
@@ -354,6 +355,7 @@ static void nbPrintDebug(const TreeStatus* ts)
     }
 }
 
+//NOTE: NOT NEEDED FOR CURRENT IMPLEMENTATION?
 static void nbPrintTreeStatus(const TreeStatus* ts)
 {
     mw_printf("TreeStatus = {\n"
@@ -389,6 +391,7 @@ static cl_int nbSetMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
     return err;
 }
 
+//NOTE: UPDATE TO CURRENT ARGS
 static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact)
 {
     cl_int err = CL_SUCCESS;
@@ -462,6 +465,7 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     return err;
 }
 
+//NOTE: UPDATE TO CURRENT ARGS
 cl_int nbSetAllKernelArguments(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
@@ -494,11 +498,13 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
     return err;
 }
 
+//NOTE: UPDATE KERNELS
 static cl_int clReleaseKernel_quiet(cl_kernel kern)
 {
     return kern ? clReleaseKernel(kern) : CL_SUCCESS;
 }
 
+//NOTE: UPDATE KERNELS
 cl_int nbReleaseKernels(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
@@ -520,6 +526,7 @@ cl_int nbReleaseKernels(NBodyState* st)
     return err;
 }
 
+//NOTE: NOT NEEDED
 static cl_uint nbFindNNode(const DevInfo* di, cl_int nbody)
 {
     cl_uint nNode = 2 * nbody;
@@ -691,7 +698,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 }
 
 /* Yo momma's so fat she has little mommas in orbit around her. */
-
+//NOTE: UPDATE KERNELS
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
     //kernels->boundingBox = mwCreateKernel(program, "boundingBox");
@@ -718,6 +725,7 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
             && kernels->forceCalculation_Exact);
 }
 
+//NOTE: UPDATE KERNELS
 cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 {
     CLInfo* ci = st->ci;
@@ -805,6 +813,7 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
     return CL_TRUE;
 }
 
+//NOTE: NOT NEEDED FOR CURRENT IMPLEMENTATOIN?
 static cl_int nbEnqueueReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb, cl_bool blocking)
 {
     return clEnqueueReadBuffer(ci->queue,
@@ -846,6 +855,7 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
     return clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
 }
 
+//NOTE: NOT NEEDED
 static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_bool quads)
 {
     cl_int err;
@@ -953,6 +963,7 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
     mw_printf("--------------------------------------------------------------------------------\n");
 }
 
+//NOTE: UPDATE ERRORS
 static NBodyStatus nbKernelErrorToNBodyStatus(NBodyKernelError x)
 {
     switch (x)
@@ -974,6 +985,7 @@ static NBodyStatus nbKernelErrorToNBodyStatus(NBodyKernelError x)
 
 
 /* Check the error code */
+//NOTE UPDATE ERROR CODES
 static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
@@ -1040,6 +1052,7 @@ static cl_double waitReleaseEventWithTime(cl_event ev)
     return t;
 }
 
+//NOTE: NOT NEEDED
 static cl_int nbEnqueueReadRootQuadMoment(NBodyState* st, NBodyQuadMatrix* quad)
 {
     cl_int err = CL_SUCCESS;
@@ -1066,6 +1079,7 @@ static cl_int nbEnqueueReadRootQuadMoment(NBodyState* st, NBodyQuadMatrix* quad)
     return err;
 }
 
+//NOTE: NOT NEEDED
 static cl_int nbEnqueueReadCenterOfMass(NBodyState* st, mwvector* cmPos)
 {
     cl_int err = CL_SUCCESS;
@@ -1083,6 +1097,7 @@ static cl_int nbEnqueueReadCenterOfMass(NBodyState* st, mwvector* cmPos)
     return err;
 }
 
+//NOTE: NOT NEEDED
 int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
 {
     static cl_bool hadMarshalError = CL_FALSE;
@@ -1115,6 +1130,7 @@ int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
     return 0;
 }
 
+//NOTE: NOT NEEDED
 static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
 {
     double frac = (double) st->step / (double) ctx->nStep;
@@ -1150,6 +1166,7 @@ static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* s
 }
 
 /* Run kernels used only by tree versions. */
+//NOTE: NOT NEEDED
 static cl_int nbExecuteTreeConstruction(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
@@ -1396,6 +1413,7 @@ tree_build_exit:
 }
 
 /* Run force calculation and integration kernels */
+//NOTE: NOT NEEDED
 static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 {
     cl_int err;
@@ -1467,6 +1485,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     return CL_SUCCESS;
 }
 
+//NOTE: NOT NEEDED
 static NBodyStatus nbCheckpointCL(const NBodyCtx* ctx, NBodyState* st)
 {
     if (st->useCLCheckpointing && nbTimeToCheckpoint(ctx, st))
@@ -1490,6 +1509,7 @@ static NBodyStatus nbCheckpointCL(const NBodyCtx* ctx, NBodyState* st)
     return NBODY_SUCCESS;
 }
 
+//NOTE: NOT NEEDED
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
@@ -1557,6 +1577,8 @@ static cl_int nbRunPreStep(NBodyState* st)
     return clSetKernelArg(kernel, 29, sizeof(cl_int), &trueVal);
 }
 
+
+//TODO: DELETE ME:
 static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
     printf("HERE \n");
@@ -1683,6 +1705,7 @@ cl_int nbReleaseBuffers(NBodyState* st)
     return _nbReleaseBuffers(st->nbb);
 }
 
+//NOTE: NOT NEEDED
 cl_int nbSetInitialTreeStatus(NBodyState* st)
 {
     cl_int err;
@@ -1712,6 +1735,7 @@ cl_int nbSetInitialTreeStatus(NBodyState* st)
     return err;
 }
 
+//NOTE: NOT NEEDED
 static cl_uint nbFindInc(cl_int warpSize, cl_uint nbody)
 {
     return (nbody + warpSize - 1) & (-warpSize);
@@ -1734,6 +1758,7 @@ cl_int nbFindEffectiveNBody(const NBodyWorkSizes* workSizes, cl_bool exact, cl_i
     }
 }
 
+//NOTE: INVESTIGATE
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_uint i;
@@ -1831,8 +1856,9 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     }
 
     return CL_SUCCESS;
-}
+}`
 
+//NOTE: NOT NEEDED
 static cl_int nbMapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
 {
     cl_uint i;
@@ -1852,6 +1878,7 @@ static cl_int nbMapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers*
     return CL_SUCCESS;
 }
 
+//NOTE: NOT NEEDED
 static cl_int nbUnmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers* nbb, CLInfo* ci)
 {
     cl_uint i;
@@ -1878,6 +1905,7 @@ static cl_int nbUnmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers
     return err;
 }
 
+//NOTE: NOT NEEDED
 /* If last parameter is true, copy to the buffers. if false, copy from the buffers */
 cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
 {
@@ -1979,6 +2007,7 @@ void nbPrintKernelTimings(const NBodyState* st)
         );
 }
 
+//NOTE: UPDATE KERNES
 void nbPrintKernelLimits(NBodyState* st)
 {
     WGInfo wgi;

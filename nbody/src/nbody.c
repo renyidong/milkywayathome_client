@@ -355,6 +355,7 @@ int nbMain(const NBodyFlags* nbf)
         if (nbStatusIsFatal(rc))
         {
             destroyNBodyState(st);
+            //TODO: Program fails here.
             printf("HERE <<<<<<<<<<<<<<<<<<<<<<<<<< \n");
             return rc;
         }
