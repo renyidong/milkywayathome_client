@@ -46,21 +46,22 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
-    gpuArray gpuData;
-    initGPUArray(gpuData, 2);
+    //gpuArray gpuData;
+    //initGPUArray(gpuData, 2);
+    //TODO: Destroy GPUArray
     
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
     while (q != NULL)               /* while not at end of scan */
     {
-        gpuVec temp;
+        //gpuVec temp;
         
         mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
         real drSq = mw_sqrv(dr);               /* and distance squared */
         
-        temp.rX = dr.x;
-        temp.rY = dr.y;
-        temp.rZ = dr.z;
+//         temp.rX = dr.x;
+//         temp.rY = dr.y;
+//         temp.rZ = dr.z;
         
         
         //Create array, with radius, and then either mass or quad moment
@@ -92,15 +93,15 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 acc0.y += mor3 * dr.y;
                 acc0.z += mor3 * dr.z;
                 
-                temp.mass = Mass(q);
+                //temp.mass = Mass(q);
 
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
                     real dr5inv, drQdr, phiQ;
                     mwvector Qdr;
                     
-                    temp.Q = Quad(q);
-                    temp.mass = -1;
+//                     temp.Q = Quad(q);
+//                     temp.mass = -1;
                     
 
                     /* form Q * dr */

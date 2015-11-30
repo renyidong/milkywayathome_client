@@ -180,7 +180,6 @@ static int nbOutputIsUseful(const NBodyFlags* nbf)
 
 NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    printf("OUTSIDE \n");
   #if NBODY_OPENCL
     if (st->usesCL)
     {
@@ -193,7 +192,6 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
 
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    printf("nbRunSystem \n");
   #if NBODY_OPENCL
     if (st->usesCL)
     {
@@ -310,23 +308,20 @@ static NBodyState _st = EMPTY_NBODYSTATE;
 
 int nbMain(const NBodyFlags* nbf)
 {
-    //TODO: Remove debug
-    printf("BEGIN \n");
-    
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
     CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
     double ts = 0.0, te = 0.0;
-    
+
     if (!nbOutputIsUseful(nbf))
     {
         return NBODY_USER_ERROR;
     }
-    
+
     nbSetCLRequestFromFlags(&clr, nbf);
-    
+
     /* Find out what device we're using so we can tell the workunit
      * about it */
     if (NBODY_OPENCL && !nbf->noCL)
@@ -338,6 +333,7 @@ int nbMain(const NBodyFlags* nbf)
             return rc;
         }
     }
+
     rc = nbResumeOrNewRun(ctx, st, nbf);
     if (nbStatusIsFatal(rc))
     {
@@ -351,15 +347,13 @@ int nbMain(const NBodyFlags* nbf)
     if (NBODY_OPENCL && !nbf->noCL)
     {
         rc = nbInitNBodyStateCL(st, ctx);
-        
         if (nbStatusIsFatal(rc))
         {
             destroyNBodyState(st);
-            //TODO: Program fails here.
-            printf("HERE <<<<<<<<<<<<<<<<<<<<<<<<<< \n");
             return rc;
         }
     }
+
     if (nbCreateSharedScene(st, ctx))
     {
         mw_printf("Failed to create shared scene\n");
