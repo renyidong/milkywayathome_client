@@ -242,20 +242,20 @@ typedef struct
 //Old Kernels struct:
 typedef struct
 {
-    cl_kernel boundingBox;
-    cl_kernel buildTreeClear;
-    cl_kernel buildTree;
-    cl_kernel summarizationClear;
-    cl_kernel summarization;
-    cl_kernel sort;
-    cl_kernel quadMoments;
-    cl_kernel forceCalculation;
-    cl_kernel integration;
+//     cl_kernel boundingBox;
+//     cl_kernel buildTreeClear;
+//     cl_kernel buildTree;
+//     cl_kernel summarizationClear;
+//     cl_kernel summarization;
+//     cl_kernel sort;
+//     cl_kernel quadMoments;
+//     cl_kernel forceCalculation;
+//     cl_kernel integration;
     
     cl_kernel testAddition;
 
     //Used by exact one only
-    cl_kernel forceCalculation_Exact;
+//     cl_kernel forceCalculation_Exact;
 } NBodyKernels;
 
 #endif /* NBODY_OPENCL */
@@ -268,15 +268,16 @@ typedef struct
 {
     real rX, rY, rZ;    //Stores radius of body calculation
     real mass;      //Stores mass of body calculation (-1 if unused)
-    NBodyQuadMatrix Q;
-    unsigned int position;  //Stores position in tree that this body is found
+    //Quad Matrix:
+    real xx, xy, xz, yy, yz, zz;
+    unsigned int index;  //Stores position in tree that this body is found
 }gpuVec;
 
 typedef struct
 {
     gpuVec *data; //Create an array of gpuVec structs to push to GPU
-    size_t used;
-    size_t size;
+    unsigned int used;
+    unsigned int size;
 }gpuArray;
 
 //void initGPUArray(gpuArray *a, size_t initialSize);

@@ -168,28 +168,28 @@ int destroyNBodyState(NBodyState* st)
 //////////////////////////
 //BEGIN Dynamic GPU Array:
 //////////////////////////
-void initGPUArray(gpuArray *a, size_t initialSize)
+void initGPUArray(gpuArray a, unsigned int initialSize)
 {
-    a->data = (gpuVec *)mwCalloc(initialSize, sizeof(gpuVec));
-    a->used = 0;
-    a->size = initialSize;
+    a.data = (gpuVec *)mwCalloc(initialSize, sizeof(gpuVec));
+    a.used = 0;
+    a.size = initialSize;
 }
 
-void insertGPUArray(gpuArray *a, gpuVec element)
+void insertGPUArray(gpuArray a, gpuVec element)
 {
-    if(a->used == a->size)
+    if(a.used == a.size)
     {
-        a->size *= 2;
-        a->data = (gpuVec *)mwRealloc(a, a->size*sizeof(gpuVec));
+        a.size *= 2;
+        a.data = (gpuVec *)mwRealloc(a.data, a.size*sizeof(gpuVec));
     }
-    a->data[a->used++] = element;
+    a.data[a.used++] = element;
 }
 
-void freeGPUArray(gpuArray *a)
+void freeGPUArray(gpuArray a)
 {
-    free(a->data);
-    a->data = NULL;
-    a->used = a->size = 0;
+    free(a.data);
+    a.data = NULL;
+    a.used = a.size = 0;
 }
 //////////////////////////
 //END Dynamic GPU Array
@@ -312,6 +312,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 
 #else
 
+//NOTE: Why are we void casting these?
 NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
 {
     (void) st, (void) ctx, (void) clr;

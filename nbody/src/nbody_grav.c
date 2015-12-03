@@ -24,6 +24,9 @@
 #include "nbody_grav.h"
 #include "milkyway_util.h"
 
+#if NBODY_OPENCL
+  #include "nbody_cl.h"
+#endif
 
 #ifdef _OPENMP
   #include <omp.h>
