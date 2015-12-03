@@ -280,9 +280,9 @@ typedef struct
     unsigned int size;
 }gpuArray;
 
-//void initGPUArray(gpuArray *a, size_t initialSize);
-//void insertGPUArray(gpuArray *a, gpuVec element);
-//void freeGPUArray(gpuArray *a);
+void initGPUArray(gpuArray *a, unsigned int initialSize);
+void insertGPUArray(gpuArray *a, gpuVec element);
+void freeGPUArray(gpuArray *a);
 
 
 

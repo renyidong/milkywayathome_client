@@ -168,28 +168,36 @@ int destroyNBodyState(NBodyState* st)
 //////////////////////////
 //BEGIN Dynamic GPU Array:
 //////////////////////////
-void initGPUArray(gpuArray a, unsigned int initialSize)
+/*need to pass in a pointer otherwise you aren't doing anything since nothing
+* is being returned.  This could be causing your segfault if you try to use
+* this array because it was never intialized.
+*/
+void initGPUArray(gpuArray *a, unsigned int initialSize) 
 {
-    a.data = (gpuVec *)mwCalloc(initialSize, sizeof(gpuVec));
-    a.used = 0;
-    a.size = initialSize;
+    a->data = (gpuVec *)mwCalloc(initialSize, sizeof(gpuVec));
+    a->used = 0;
+    a->size = initialSize;
 }
 
-void insertGPUArray(gpuArray a, gpuVec element)
+void insertGPUArray(gpuArray *a, gpuVec element)
 {
-    if(a.used == a.size)
+    if(a->used == a->size)
     {
-        a.size *= 2;
-        a.data = (gpuVec *)mwRealloc(a.data, a.size*sizeof(gpuVec));
+        a->size *= 2;
+        a->data = (gpuVec *)mwRealloc(a->data, (a->size)*sizeof(gpuVec));
     }
-    a.data[a.used++] = element;
+    (a->data)[++(a->used)] = element;  //increments array used size and put item into array
 }
 
-void freeGPUArray(gpuArray a)
+//Need pointer here otherwise you are trying to free stack memory...
+void freeGPUArray(gpuArray *a)
 {
-    free(a.data);
-    a.data = NULL;
-    a.used = a.size = 0;
+   if(a->data)  //Always a good idea to check to make sure the array was allocated in the first place
+   {
+       free(a->data);
+       a->data = NULL;
+       a->used = a->size = 0;
+   }
 }
 //////////////////////////
 //END Dynamic GPU Array

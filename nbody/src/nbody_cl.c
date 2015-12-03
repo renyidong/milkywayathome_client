@@ -2255,13 +2255,13 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     t.index = 0;
     printf("Creating GPUArray\n");
     gpuArray gpuData;
-    initGPUArray(gpuData, 2);
+    initGPUArray(&gpuData, 2);
     printf("GPUArray Successfully Created\n");
     printf("Inserting GPU Data\n");
-    insertGPUArray(gpuData, t);
+    insertGPUArray(&gpuData, t);
     printf("Successfully Inserted\n");
     printf("Destroying GPUArray\n");
-    freeGPUArray(gpuData);
+    freeGPUArray(&gpuData);
     printf("GPUArray Destroyed\n");
     
 
