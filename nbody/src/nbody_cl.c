@@ -2311,7 +2311,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
         }
         ++n;
     }
-    
+ 
 
     return nbWriteFinalCheckpoint(ctx, st);
 }
