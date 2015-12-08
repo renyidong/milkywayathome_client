@@ -2240,29 +2240,77 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
-    printf("nbRunSystemCL\n");
-    gpuVec t;
-    t.xx = 0;
-    t.xy = 0;
-    t.xz = 0;
-    t.yy = 0;
-    t.yz = 0;
-    t.zz = 0;
-    t.rX = 0;
-    t.rY = 0;
-    t.rZ = 0;
-    t.mass = 0;
-    t.index = 0;
     printf("Creating GPUArray\n");
-    gpuArray gpuData;
-    initGPUArray(gpuData, 2);
-    printf("GPUArray Successfully Created\n");
-    printf("Inserting GPU Data\n");
-    insertGPUArray(gpuData, t);
-    printf("Successfully Inserted\n");
-    printf("Destroying GPUArray\n");
-    freeGPUArray(gpuData);
-    printf("GPUArray Destroyed\n");
+    //Create gpu tree array:
+    gpuVec gpuTree[st->nbody];
+   //Fill TreeArray:
+    const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
+    unsigned int n = 0; //Start at initial index
+    while(q != NULL)
+    {
+        //Add Node Data to Array
+        //POSITION:
+        gpuTree[n].x = q->pos.x;
+        gpuTree[n].y = q->pos.y;
+        gpuTree[n].z = q->pos.z;
+        //MASS:
+        gpuTree[n].mass = q->mass;
+        //QUAD:
+        if(ctx->useQuad && isCell(q)) //If Cell, and using quad, calculate quad moments
+        {
+            gpuTree[n].xx = Quad(q).xx;
+            gpuTree[n].xy = Quad(q).xy;
+            gpuTree[n].xz = Quad(q).xz;
+            gpuTree[n].yy = Quad(q).yy;
+            gpuTree[n].yz = Quad(q).yz;
+            gpuTree[n].zz = Quad(q).zz;
+        }
+        else //Otherwise initialize to -1
+        {
+            gpuTree[n].xx = -1;
+            gpuTree[n].xy = -1;
+            gpuTree[n].xz = -1;
+            gpuTree[n].yy = -1;
+            gpuTree[n].yz = -1;
+            gpuTree[n].zz = -1;
+        }
+            
+            
+        //Now set next and more indicies
+        if(More(q) != NULL)
+        {
+            gpuTree[n].more = n+1;
+        }
+        else
+        {
+            gpuTree[n].more = 0;
+        }
+        if(Next(q) == NULL) //if we are at the end of the tree, we just point back at root
+        {
+            gpuTree[n].next = 0;
+        }
+        else if(isBody(q)) //If we have a body, the next object in the array is always n+1
+        {
+            gpuTree[n].next = n+1;
+        }
+        else //If we have a cell, the next object in the array is n + numChildren + 1
+        {
+            unsigned int numChild = 0;
+            const NBodyNode* w = q; //Start at current cell to find out how many children it has
+            while(w != Next(q))
+            {
+                while(More(w) != NULL) //Follow tree to bottom
+                {
+                    ++numChild;
+                    w = More(w);
+                }
+                ++numChild;
+                w  = Next(w); //Traverse tree until we get to Next(q), adding children as we go
+            }
+            gpuTree[n].next = n + 1 + numChild; //Now we know what the Next() index will be
+        }
+        ++n;
+    }
     
 
     return nbWriteFinalCheckpoint(ctx, st);

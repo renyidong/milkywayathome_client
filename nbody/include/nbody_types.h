@@ -266,11 +266,12 @@ typedef struct
 //////////////////////////////////////////
 typedef struct
 {
-    real rX, rY, rZ;    //Stores radius of body calculation
-    real mass;      //Stores mass of body calculation (-1 if unused)
+    real x, y, z;    //Stores position of body/node
+    real mass;      //Stores mass of body/node
     //Quad Matrix:
-    real xx, xy, xz, yy, yz, zz;
-    unsigned int index;  //Stores position in tree that this body is found
+    real xx, xy, xz, yy, yz, zz; //Quad (-1 if unused)
+    unsigned int next;  
+    unsigned int more;
 }gpuVec;
 
 typedef struct
