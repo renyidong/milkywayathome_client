@@ -85,23 +85,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
             {
                 real drab, phii, mor3;
                 /*offset with ifdefs for opencl*/
-                gpuVec forceCalc;
-                forceCalc.rX = dr.x;
-                forceCalc.rY = dr.y;
-                forceCalc.rZ = dr.z;
-                forceCalc.mass = Mass(q);
-                if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
-                {
-                    forceCalc.xx = Quad(q).xx;
-                    forceCalc.xy = Quad(q).xy;
-                    forceCalc.xz = Quad(q).xz;
-                    forceCalc.yy = Quad(q).yy;
-                    forceCalc.yz = Quad(q).yz;
-                    forceCalc.zz = Quad(q).zz;
-                }
-                insertGPUArray(&gpuData, forceCalc);
-                /*offset with ifdefs for opencl*/
-                /* Compute gravity */
+                
                 
                 //This can be moved to GPU
                 drSq += ctx->eps2;   /* use standard softening */
@@ -168,7 +152,6 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
         nbReportTreeIncest(ctx, st);
     }
-    freeGPUArray(&gpuData);
     
     return acc0;
 }
