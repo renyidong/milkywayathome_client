@@ -346,15 +346,15 @@ int nbMain(const NBodyFlags* nbf)
     nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     nbSetStateFromFlags(st, nbf);
 
-//     if (NBODY_OPENCL && !nbf->noCL)
-//     {
-//         rc = nbInitNBodyStateCL(st, ctx);
-//         if (nbStatusIsFatal(rc))
-//         {
-//             destroyNBodyState(st);
-//             return rc;
-//         }
-//     }
+    if (NBODY_OPENCL && !nbf->noCL)
+    {
+        rc = nbInitNBodyStateCL(st, ctx);
+        if (nbStatusIsFatal(rc))
+        {
+            destroyNBodyState(st);
+            return rc;
+        }
+    }
 
     if (nbCreateSharedScene(st, ctx))
     {

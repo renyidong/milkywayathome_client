@@ -196,6 +196,30 @@ typedef struct
     cl_mem pos[3];
     cl_mem vel[3];
     cl_mem acc[3];
+
+    cl_mem mass;
+
+    cl_mem next; /* TODO: We can reuse other buffers with this later to save memory */
+    cl_mem more;
+
+    struct
+    {
+        cl_mem xx, xy, xz;
+        cl_mem yy, yz;
+        cl_mem zz;
+    } quad;
+    
+cl_mem dummy[18];
+    
+   
+} NBodyBuffers;
+
+
+typedef struct
+{
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
     cl_mem max[3];
     cl_mem min[3];
     cl_mem masses;
@@ -230,7 +254,7 @@ typedef struct
      * cases.
      */
     cl_mem dummy[18];
-} NBodyBuffers;
+} NBodyBuffersOld;
 
 
 
@@ -249,7 +273,7 @@ typedef struct
 //     cl_kernel summarization;
 //     cl_kernel sort;
 //     cl_kernel quadMoments;
-//     cl_kernel forceCalculation;
+    cl_kernel forceCalculation;
 //     cl_kernel integration;
     
     cl_kernel testAddition;
@@ -266,23 +290,34 @@ typedef struct
 //////////////////////////////////////////
 typedef struct
 {
-    real x, y, z;    //Stores position of body/node
-    real mass;      //Stores mass of body/node
-    //Quad Matrix:
-    real xx, xy, xz, yy, yz, zz; //Quad (-1 if unused)
-    unsigned int next;  
+    real pos[3];
+    real vel[3];
+    //real acc[3];
+
+    real mass;
+
+    unsigned int next;
     unsigned int more;
-}gpuVec;
+
+    struct
+    {
+        real xx, xy, xz;
+        real yy, yz;
+        real zz;
+    } quad;
+    
+   
+}gpuElement;
 
 typedef struct
 {
-    gpuVec *data; //Create an array of gpuVec structs to push to GPU
+    gpuElement *data; //Create an array of gpuVec structs to push to GPU
     unsigned int used;
     unsigned int size;
 }gpuArray;
 
 void initGPUArray(gpuArray *a, unsigned int initialSize);
-void insertGPUArray(gpuArray *a, gpuVec element);
+void insertGPUArray(gpuArray *a, gpuElement element);
 void freeGPUArray(gpuArray *a);
 
 

@@ -174,17 +174,17 @@ int destroyNBodyState(NBodyState* st)
 */
 void initGPUArray(gpuArray *a, unsigned int initialSize) 
 {
-    a->data = (gpuVec *)mwCalloc(initialSize, sizeof(gpuVec));
+    a->data = (gpuElement *)mwCalloc(initialSize, sizeof(gpuElement));
     a->used = 0;
     a->size = initialSize;
 }
 
-void insertGPUArray(gpuArray *a, gpuVec element)
+void insertGPUArray(gpuArray *a, gpuElement element)
 {
     if(a->used == a->size)
     {
         a->size *= 2;
-        a->data = (gpuVec *)mwRealloc(a->data, (a->size)*sizeof(gpuVec));
+        a->data = (gpuElement *)mwRealloc(a->data, (a->size)*sizeof(gpuElement));
     }
     (a->data)[++(a->used)] = element;  //increments array used size and put item into array
 }
@@ -297,13 +297,13 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
         return NBODY_CL_ERROR;
 
     err = nbCreateBuffers(ctx, st);
-    printf(">>>>>>>>>BROKEN HERE<<<<<<<<<<\n");
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbSetInitialTreeStatus(st);
-    if (err != CL_SUCCESS)
-        return NBODY_CL_ERROR;
+    //Commented out to fix broken initialization, don't need anymore because tree status not on GPU
+    //err = nbSetInitialTreeStatus(st);
+    //if (err != CL_SUCCESS)
+    //    return NBODY_CL_ERROR;
 
     err = nbSetAllKernelArguments(st);
     if (err != CL_SUCCESS)
