@@ -174,17 +174,17 @@ int destroyNBodyState(NBodyState* st)
 */
 void initGPUArray(gpuArray *a, unsigned int initialSize) 
 {
-    a->data = (gpuElement *)mwCalloc(initialSize, sizeof(gpuElement));
+    a->data = (gpuTree*)mwCalloc(initialSize, sizeof(gpuTree));
     a->used = 0;
     a->size = initialSize;
 }
 
-void insertGPUArray(gpuArray *a, gpuElement element)
+void insertGPUArray(gpuArray *a, gpuTree element)
 {
     if(a->used == a->size)
     {
         a->size *= 2;
-        a->data = (gpuElement *)mwRealloc(a->data, (a->size)*sizeof(gpuElement));
+        a->data = (gpuTree *)mwRealloc(a->data, (a->size)*sizeof(gpuTree));
     }
     (a->data)[++(a->used)] = element;  //increments array used size and put item into array
 }

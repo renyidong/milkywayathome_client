@@ -87,6 +87,7 @@
   #endif
 #endif /* DOUBLEPREC */
 
+
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
@@ -197,7 +198,6 @@ typedef struct __attribute__((aligned(64)))
 } TreeStatus;
 
 
-
 typedef struct
 {
     real xx, xy, xz;
@@ -205,8 +205,28 @@ typedef struct
     real zz;
 } QuadMatrix;
 
+//Structure that holds flattened GPU tree:
+typedef struct
+{
+    real pos[3];
+    real vel[3];
+    real acc[3];
+    
+    real mass;
+    
+    unsigned int next;
+    unsigned int more;
+    
+    struct
+    {
+        real xx, xy, xz;
+        real yy, yz;
+        real zz;
+    }quad;
+}gpuTree;
 
-
+//gpuTree pointer:
+typedef __global volatile gpuTree* restrict GTPtr;
 typedef __global volatile real* restrict RVPtr;
 typedef __global volatile int* restrict IVPtr;
 
@@ -345,6 +365,13 @@ inline real4 externalAcceleration(real x, real y, real z)
 
 
 /* All kernels will use the same parameters for now */
+
+// #define NBODY_KERNEL(name) name(                        \
+//     GTPtr _gTreeIn, GTPtr _gTreeOut                     \
+//     )
+//     
+
+//OLD KERNEL ARGUMENTS:
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
     RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
@@ -1101,8 +1128,17 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 #endif
 
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
-__kernel void NBODY_KERNEL(forceCalculation)
+__kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
+    _gTreeOut[0].pos[0] = _gTreeIn[0].pos[0];
+    //TODO: Modify first position value
+    
+}
+    
+    
+    
+    
+
 //     __local uint maxDepth;
 //     __local real rootCritRadius;
 // 
@@ -1434,54 +1470,54 @@ __kernel void NBODY_KERNEL(forceCalculation)
 //           #endif /* !HAVE_INLINE_PTX */
 //         }
 //    }
-}
+//}
 
 __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
-    uint inc = get_local_size(0) * get_num_groups(0);
-
-    /* Iterate over all bodies assigned to thread */
-    for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
-    {
-        real px = _posX[i];
-        real py = _posY[i];
-        real pz = _posZ[i];
-
-        real ax = _accX[i];
-        real ay = _accY[i];
-        real az = _accZ[i];
-
-        real vx = _velX[i];
-        real vy = _velY[i];
-        real vz = _velZ[i];
-
-
-        real dvx = (0.5 * TIMESTEP) * ax;
-        real dvy = (0.5 * TIMESTEP) * ay;
-        real dvz = (0.5 * TIMESTEP) * az;
-
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
-
-        px = mad(TIMESTEP, vx, px);
-        py = mad(TIMESTEP, vy, py);
-        pz = mad(TIMESTEP, vz, pz);
-
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
-
-
-        _posX[i] = px;
-        _posY[i] = py;
-        _posZ[i] = pz;
-
-        _velX[i] = vx;
-        _velY[i] = vy;
-        _velZ[i] = vz;
-    }
+//     uint inc = get_local_size(0) * get_num_groups(0);
+// 
+//     /* Iterate over all bodies assigned to thread */
+//     for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
+//     {
+//         real px = _posX[i];
+//         real py = _posY[i];
+//         real pz = _posZ[i];
+// 
+//         real ax = _accX[i];
+//         real ay = _accY[i];
+//         real az = _accZ[i];
+// 
+//         real vx = _velX[i];
+//         real vy = _velY[i];
+//         real vz = _velZ[i];
+// 
+// 
+//         real dvx = (0.5 * TIMESTEP) * ax;
+//         real dvy = (0.5 * TIMESTEP) * ay;
+//         real dvz = (0.5 * TIMESTEP) * az;
+// 
+//         vx += dvx;
+//         vy += dvy;
+//         vz += dvz;
+// 
+//         px = mad(TIMESTEP, vx, px);
+//         py = mad(TIMESTEP, vy, py);
+//         pz = mad(TIMESTEP, vz, pz);
+// 
+//         vx += dvx;
+//         vy += dvy;
+//         vz += dvz;
+// 
+// 
+//         _posX[i] = px;
+//         _posY[i] = py;
+//         _posZ[i] = pz;
+// 
+//         _velX[i] = vx;
+//         _velY[i] = vy;
+//         _velZ[i] = vz;
+//     }
 }
 
 /* EFFNBODY must be divisible by workgroup size to prevent conditional barrier */
@@ -1579,9 +1615,7 @@ __kernel void NBODY_KERNEL(integration)
 //TESTING:
 /////////////
 
-__kernel void testAddition(__global int *a, __global int *b, __global int *c)
+__kernel void testAddition(__global real* posX, __global real* posY)
 {
     unsigned int i = get_global_id(0);
-
-    *c = *a + *b;
 }

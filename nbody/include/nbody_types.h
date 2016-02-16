@@ -292,7 +292,7 @@ typedef struct
 {
     real pos[3];
     real vel[3];
-    //real acc[3];
+    real acc[3];
 
     real mass;
 
@@ -304,20 +304,20 @@ typedef struct
         real xx, xy, xz;
         real yy, yz;
         real zz;
-    } quad;
+    }quad;
     
    
-}gpuElement;
+}gpuTree;
 
 typedef struct
 {
-    gpuElement *data; //Create an array of gpuVec structs to push to GPU
+    gpuTree *data; //Create an array of gpuVec structs to push to GPU
     unsigned int used;
     unsigned int size;
 }gpuArray;
 
 void initGPUArray(gpuArray *a, unsigned int initialSize);
-void insertGPUArray(gpuArray *a, gpuElement element);
+void insertGPUArray(gpuArray *a, gpuTree element);
 void freeGPUArray(gpuArray *a);
 
 

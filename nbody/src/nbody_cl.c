@@ -337,7 +337,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     return CL_FALSE;
 }
 
-
+//NOTE: This is an important function:
 static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
 {
     return clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, flags, 0,
@@ -487,13 +487,13 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 //         err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->sort, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->quadMoments, st->nbb, exact);
-        err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
+//        err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
     else
     {
         //TESTING: Return to forceCalculation_Exact:
-        err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
+        //err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
         //err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
 
@@ -1480,7 +1480,9 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
         upperBound += (cl_int) global[0];
         ws->timings[5] += waitReleaseEventWithTime(ev);
     }
-// 
+    
+    //RUN INTEGRATION KERNEL:
+
 //     if (mw_likely(updateState))
 //     {
 //         err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
@@ -1496,7 +1498,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 //     {
 //         ws->timings[6] += waitReleaseEventWithTime(integrateEv);
 //     }
-// 
+
     return CL_SUCCESS;
 }
 
@@ -1523,47 +1525,6 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 // 
 //     return NBODY_SUCCESS;
 // }
-
-// //NOTE: NOT NEEDED
-NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
-{
-    
-    ++st->step;
-    cl_int err;
-    cl_uint i;
-    NBodyWorkSizes* ws = st->workSizes;
-
-    st->dirty = TRUE;
-    
-    memset(ws->timings, 0, sizeof(ws->timings));
-// 
-//     if (!st->usesExact)
-//     {
-//         err = nbExecuteTreeConstruction(st);
-//         if (err != CL_SUCCESS)
-//         {
-//             mwPerrorCL(err, "Error executing tree construction kernels");
-//             return NBODY_CL_ERROR;
-//         }
-//     }
-// 
-    err = nbExecuteForceKernels(st, CL_TRUE);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error executing force kernels");
-        return NBODY_CL_ERROR;
-    }
-// 
-//     for (i = 0; i < 7; ++i) /* Add timings to running totals */
-//     {
-//         ws->kernelTimings[i] += ws->timings[i];
-//     }
-// 
-//     nbReportProgressWithTimings(ctx, st);
-//     nbUpdateDisplayedBodies(ctx, st);
-// 
-    return NBODY_SUCCESS;
-}
 
 /* We need to run a fake step to get the initial accelerations without
  * touching the positons/velocities */
@@ -1598,67 +1559,67 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 //TODO: REWRITE:
 static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
-    printf("HERE \n");
-    NBodyStatus rc = NBODY_SUCCESS;
-    cl_int err;
-
-    err = nbRunPreStep(st);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error running pre step");
-        return NBODY_CL_ERROR;
-    }
-    #ifdef NBODY_BLENDER_OUTPUT
-        deleteOldFiles(st);
-        mwvector startCmPos;
-        mwvector perpendicularCmPos;
-        mwvector nextCmPos;
-        nbFindCenterOfMass(&startCmPos, st);
-        perpendicularCmPos=startCmPos;
-        printf("*Total frames: %d\n", kept_frames);
-    #endif
-        
-    //Main loop:
-    while (st->step < ctx->nStep)
-    {
-        #ifdef NBODY_BLENDER_OUTPUT
-            nbFindCenterOfMass(&nextCmPos, st);
-            blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
-        #endif
-        rc = nbCheckKernelErrorCode(ctx, st);
-        if (nbStatusIsFatal(rc))
-        {
-            return rc;
-        }
-
-        rc = nbStepSystemCL(ctx, st);
-        if (nbStatusIsFatal(rc))
-        {
-            return rc;
-        }
-
-        rc = nbCheckpointCL(ctx, st);
-        if (nbStatusIsFatal(rc))
-        {
-            return rc;
-        }
-
-        st->step++;
-        #ifdef NBODY_BLENDER_OUTPUT
-            if (frame_progress < st->step)
-            {
-                frame_progress+=blender_frame_skip;
-                blenderPrintBodies(st, ctx);
-                printf("Frame: %d\n", (int)(st->step/blender_frame_skip));
-            }
-        #endif
-    }
-    #ifdef NBODY_BLENDER_OUTPUT
-        mwvector finalcmPos;
-        blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
-    #endif
-
-    return rc;
+//     printf("HERE \n");
+//     NBodyStatus rc = NBODY_SUCCESS;
+//     cl_int err;
+// 
+//     err = nbRunPreStep(st);
+//     if (err != CL_SUCCESS)
+//     {
+//         mwPerrorCL(err, "Error running pre step");
+//         return NBODY_CL_ERROR;
+//     }
+//     #ifdef NBODY_BLENDER_OUTPUT
+//         deleteOldFiles(st);
+//         mwvector startCmPos;
+//         mwvector perpendicularCmPos;
+//         mwvector nextCmPos;
+//         nbFindCenterOfMass(&startCmPos, st);
+//         perpendicularCmPos=startCmPos;
+//         printf("*Total frames: %d\n", kept_frames);
+//     #endif
+//         
+//     //Main loop:
+//     while (st->step < ctx->nStep)
+//     {
+//         #ifdef NBODY_BLENDER_OUTPUT
+//             nbFindCenterOfMass(&nextCmPos, st);
+//             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
+//         #endif
+//         rc = nbCheckKernelErrorCode(ctx, st);
+//         if (nbStatusIsFatal(rc))
+//         {
+//             return rc;
+//         }
+// 
+//         rc = nbStepSystemCL(ctx, st);
+//         if (nbStatusIsFatal(rc))
+//         {
+//             return rc;
+//         }
+// 
+//         rc = nbCheckpointCL(ctx, st);
+//         if (nbStatusIsFatal(rc))
+//         {
+//             return rc;
+//         }
+// 
+//         st->step++;
+//         #ifdef NBODY_BLENDER_OUTPUT
+//             if (frame_progress < st->step)
+//             {
+//                 frame_progress+=blender_frame_skip;
+//                 blenderPrintBodies(st, ctx);
+//                 printf("Frame: %d\n", (int)(st->step/blender_frame_skip));
+//             }
+//         #endif
+//     }
+//     #ifdef NBODY_BLENDER_OUTPUT
+//         mwvector finalcmPos;
+//         blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
+//     #endif
+// 
+//     return rc;
 }
 
 /* This is dumb and errors if mem isn't set */
@@ -2243,7 +2204,7 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
     return CL_SUCCESS;
 }
-void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuElement* gpuTree)
+void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
 {
     //Create gpu tree array:
     //Fill TreeArray:
@@ -2254,56 +2215,56 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuElement* gpuTree)
     {
         //Add Node Data to Array
         //POSITION:
-        gpuTree[n].pos[0] = q->pos.x;
-        gpuTree[n].pos[1] = q->pos.y;
-        gpuTree[n].pos[2] = q->pos.z;
+        gpT[n].pos[0] = q->pos.x;
+        gpT[n].pos[1] = q->pos.y;
+        gpT[n].pos[2] = q->pos.z;
         
         if(isBody(q))
         {
         //VELOCITY:
-            gpuTree[n].vel[0] = p->vel.x;
-            gpuTree[n].vel[1] = p->vel.y;
-            gpuTree[n].vel[2] = p->vel.z;
+            gpT[n].vel[0] = p->vel.x;
+            gpT[n].vel[1] = p->vel.y;
+            gpT[n].vel[2] = p->vel.z;
         }
         //MASS:
-        gpuTree[n].mass = q->mass;
+        gpT[n].mass = q->mass;
         //QUAD:
         if(ctx->useQuad && isCell(q)) //If Cell, and using quad, calculate quad moments
         {
-            gpuTree[n].quad.xx = Quad(q).xx;
-            gpuTree[n].quad.xy = Quad(q).xy;
-            gpuTree[n].quad.xz = Quad(q).xz;
-            gpuTree[n].quad.yy = Quad(q).yy;
-            gpuTree[n].quad.yz = Quad(q).yz;
-            gpuTree[n].quad.zz = Quad(q).zz;
+            gpT[n].quad.xx = Quad(q).xx;
+            gpT[n].quad.xy = Quad(q).xy;
+            gpT[n].quad.xz = Quad(q).xz;
+            gpT[n].quad.yy = Quad(q).yy;
+            gpT[n].quad.yz = Quad(q).yz;
+            gpT[n].quad.zz = Quad(q).zz;
         }
         else //Otherwise initialize to -1
         {
-            gpuTree[n].quad.xx = -1;
-            gpuTree[n].quad.xy = -1;
-            gpuTree[n].quad.xz = -1;
-            gpuTree[n].quad.yy = -1;
-            gpuTree[n].quad.yz = -1;
-            gpuTree[n].quad.zz = -1;
+            gpT[n].quad.xx = -1;
+            gpT[n].quad.xy = -1;
+            gpT[n].quad.xz = -1;
+            gpT[n].quad.yy = -1;
+            gpT[n].quad.yz = -1;
+            gpT[n].quad.zz = -1;
         }
             
             
         //Now set next and more indicies
         if(More(q) != NULL)
         {
-            gpuTree[n].more = n+1;
+            gpT[n].more = n+1;
         }
         else
         {
-            gpuTree[n].more = 0;
+            gpT[n].more = 0;
         }
         if(Next(q) == NULL) //if we are at the end of the tree, we just point back at root
         {
-            gpuTree[n].next = 0;
+            gpT[n].next = 0;
         }
         else if(isBody(q)) //If we have a body, the next object in the array is always n+1
         {
-            gpuTree[n].next = n+1;
+            gpT[n].next = n+1;
         }
         else //If we have a cell, the next object in the array is n + numChildren + 1
         {
@@ -2319,21 +2280,113 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuElement* gpuTree)
                 ++numChild;
                 w  = Next(w); //Traverse tree until we get to Next(q), adding children as we go
             }
-            gpuTree[n].next = n + 1 + numChild; //Now we know what the Next() index will be
+            gpT[n].next = n + 1 + numChild; //Now we know what the Next() index will be
         }
         ++n;
     }
 }
 
+NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut, cl_mem* input, cl_mem* output)
+{
+    //Need to write to the buffer in this function
+    
+    ++st->step;
+    cl_int err;
+    cl_uint i;
+    cl_command_queue q = st->ci->queue;
+
+    st->dirty = TRUE;
+    
+    fillGPUTree(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
+    
+    gTreeIn[0].pos[0] = 20;
+    
+    //TODO: Figure out why buffer isn't being used by GPU
+    err = clEnqueueWriteBuffer(st->ci->queue,
+                        *input,
+                        CL_TRUE,
+                        0, st->effNBody*sizeof(gpuTree), gTreeIn,
+                        0, NULL, NULL);
+    if(err != CL_SUCCESS)
+        printf("%i, OH SHIT\n", err);
+    
+    
+    err = clSetKernelArg(st->kernels->forceCalculation, 0, sizeof(cl_mem), input );
+    err = clSetKernelArg(st->kernels->forceCalculation, 1, sizeof(cl_mem), output );
+    if(err != CL_SUCCESS)
+        printf("%i, OH SHIT\n", err);
+    
+    err = nbExecuteForceKernels(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing force kernels");
+        return NBODY_CL_ERROR;
+    }
+    //TODO: Figure out why buffer isn't being used by GPU
+    err = clEnqueueReadBuffer(st->ci->queue,
+                        *output,
+                        CL_TRUE,
+                        0, st->effNBody*sizeof(gpuTree), gTreeOut,
+                        0, NULL, NULL);
+    if(err != CL_SUCCESS)
+        printf("%i, OH SHIT\n", err);
+    
+    //gTreeOut[0].pos[0] = 20;
+    
+    printf("%f \n", gTreeOut[0].pos[0]);
+
+    return NBODY_SUCCESS;
+}
+
+
+NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
+{
+    //Need to write to the buffer in this function
+    
+    ++st->step;
+    cl_int err;
+    cl_uint i;
+    
+    NBodyWorkSizes* ws = st->workSizes;
+
+    st->dirty = TRUE;
+    
+    memset(ws->timings, 0, sizeof(ws->timings));
+    
+    gpuTree gTreeIn; //GPU tree to be filled from host data
+    gpuTree gTreeOut; //GPU Tree to be filled from returned GPU data
+    fillGPUTree(ctx, st, &gTreeIn); //Fill GPU Tree headed to the GP
+    
+    
+    
+    err = nbExecuteForceKernels(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing force kernels");
+        return NBODY_CL_ERROR;
+    }
+// 
+//     for (i = 0; i < 7; ++i) /* Add timings to running totals */
+//     {
+//         ws->kernelTimings[i] += ws->timings[i];
+//     }
+// 
+//     nbReportProgressWithTimings(ctx, st);
+//     nbUpdateDisplayedBodies(ctx, st);
+// 
+    return NBODY_SUCCESS;
+}
+
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     //FILL GPU VECTOR:
-    clock_t begin, end;
+    
+    /*clock_t begin, end;
     double timeSpent;
     printf("Creating GPUArray\n");
     unsigned int l = 0;
     begin = clock();
-    gpuElement gTree[st->nbody];
+    gpuTree gTree[st->nbody];
     while(l < ctx->nStep)
     {
         fillGPUTree(ctx, st, &gTree);
@@ -2342,14 +2395,27 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     end = clock();
     timeSpent = ((double)(end - begin) / CLOCKS_PER_SEC);
     printf("Filling array took a total of %lf seconds for %i timesteps\n",timeSpent, l);
+    */
+    
+    //Create Buffer:
+    CLInfo* ci = st->ci;    
+    gpuTree gTreeIn[st->effNBody];
+    gpuTree gTreeOut[st->effNBody];
+//     gpuTree* gTreeIn = (gpuTree*)mwCreatePinnedZeroReadWriteBuffer(ci, st->effNBody*sizeof(gpuTree));
+//     gpuTree* gTreeOut = (gpuTree*)mwCreatePinnedZeroReadWriteBuffer(ci, st->effNBody*sizeof(gpuTree));
+    cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
+    cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
+    
+    //cl_mem buffer2 = mwCreatePinnedZeroReadWriteBuffer(ci, st->effNBody*sizeof(gpuTree));
     
     //RUN SYSTEM:
     while(st->step < ctx->nStep)
     {
-        nbStepSystemCL(ctx, st);
+        nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut, &input, &output);
         printf("%i\n", st->step);
     }
 
+    
     return nbWriteFinalCheckpoint(ctx, st);
 }
 
