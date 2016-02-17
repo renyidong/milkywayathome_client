@@ -1460,26 +1460,27 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     //upperBound = st->ignoreResponsive ? effNBody : (cl_int) global[0];
     /////////////////////////////////
     
-     for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += global[0])
-     {
-         cl_event ev;
- 
-         upperBound = (upperBound > effNBody) ? effNBody : upperBound;
+    //printf("%i and %i\n", global[0], local[0]);
+    
+    cl_event ev;
 
-        //Not sure what this is for, seems like it just sets max nbody:
-        //err = clSetKernelArg(forceKern, 28, sizeof(cl_uint), &upperBound);
-        //if (err != CL_SUCCESS)
-            //return err;
-        
-        err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
-                                     offset, global, local,
-                                     0, NULL, &ev);
-        if (err != CL_SUCCESS)
-            return err;
+    //Not sure what this is for, seems like it just sets max nbody:
+    //err = clSetKernelArg(forceKern, 28, sizeof(cl_uint), &upperBound);
+    //if (err != CL_SUCCESS)
+        //return err;
+    
+    err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
+                                    0, global, local,
+                                    0, NULL, &ev);
+    if (err != CL_SUCCESS)
+        return err;
 
-        upperBound += (cl_int) global[0];
-        ws->timings[5] += waitReleaseEventWithTime(ev);
-    }
+    //ws->timings[5] += waitReleaseEventWithTime(ev);
+    
+    
+    
+    
+    
     
     //RUN INTEGRATION KERNEL:
 
@@ -1498,7 +1499,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 //     {
 //         ws->timings[6] += waitReleaseEventWithTime(integrateEv);
 //     }
-
+    clFinish(ci->queue);
     return CL_SUCCESS;
 }
 
@@ -2288,6 +2289,12 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
 
 NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut, cl_mem* input, cl_mem* output)
 {
+    //TEST: Run with fixed array Info
+    float* inTest = malloc(10*sizeof(float));
+    float* outTest = malloc(10*sizeof(float));
+    
+    inTest[0] = 10;
+    
     //Need to write to the buffer in this function
     
     ++st->step;
@@ -2300,7 +2307,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     fillGPUTree(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
     gTreeIn[0].pos[0] = 20;
-    
+
     //TODO: Figure out why buffer isn't being used by GPU
     err = clEnqueueWriteBuffer(st->ci->queue,
                         *input,
@@ -2309,7 +2316,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
                         0, NULL, NULL);
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
-    
+
     
     err = clSetKernelArg(st->kernels->forceCalculation, 0, sizeof(cl_mem), input );
     err = clSetKernelArg(st->kernels->forceCalculation, 1, sizeof(cl_mem), output );
@@ -2322,6 +2329,9 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
         mwPerrorCL(err, "Error executing force kernels");
         return NBODY_CL_ERROR;
     }
+
+  
+    
     //TODO: Figure out why buffer isn't being used by GPU
     err = clEnqueueReadBuffer(st->ci->queue,
                         *output,
@@ -2331,7 +2341,6 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    //gTreeOut[0].pos[0] = 20;
     
     printf("%f \n", gTreeOut[0].pos[0]);
 
@@ -2341,6 +2350,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
+    
     //Need to write to the buffer in this function
     
     ++st->step;
@@ -2380,34 +2390,16 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     //FILL GPU VECTOR:
-    
-    /*clock_t begin, end;
-    double timeSpent;
-    printf("Creating GPUArray\n");
-    unsigned int l = 0;
-    begin = clock();
-    gpuTree gTree[st->nbody];
-    while(l < ctx->nStep)
-    {
-        fillGPUTree(ctx, st, &gTree);
-        ++l;
-    }
-    end = clock();
-    timeSpent = ((double)(end - begin) / CLOCKS_PER_SEC);
-    printf("Filling array took a total of %lf seconds for %i timesteps\n",timeSpent, l);
-    */
+
     
     //Create Buffer:
     CLInfo* ci = st->ci;    
     gpuTree gTreeIn[st->effNBody];
     gpuTree gTreeOut[st->effNBody];
-//     gpuTree* gTreeIn = (gpuTree*)mwCreatePinnedZeroReadWriteBuffer(ci, st->effNBody*sizeof(gpuTree));
-//     gpuTree* gTreeOut = (gpuTree*)mwCreatePinnedZeroReadWriteBuffer(ci, st->effNBody*sizeof(gpuTree));
+    
     cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
     cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
-    
-    //cl_mem buffer2 = mwCreatePinnedZeroReadWriteBuffer(ci, st->effNBody*sizeof(gpuTree));
-    
+   
     //RUN SYSTEM:
     while(st->step < ctx->nStep)
     {

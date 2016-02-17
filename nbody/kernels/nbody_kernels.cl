@@ -1615,7 +1615,7 @@ __kernel void NBODY_KERNEL(integration)
 //TESTING:
 /////////////
 
-__kernel void testAddition(__global real* posX, __global real* posY)
+__kernel void testAddition(__global real* _input, __global real* _output)
 {
-    unsigned int i = get_global_id(0);
+    _output[0] = _input[0];
 }
