@@ -1130,8 +1130,12 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
-    _gTreeOut[0].pos[0] = _gTreeIn[0].pos[0];
-    //TODO: Modify first position value
+    int a = (int)get_global_id(0);
+    for(int i = 0; i < 3; ++i){
+        _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
+        _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];
+    }
+    //TODO: start writing force calculations
     
 }
     

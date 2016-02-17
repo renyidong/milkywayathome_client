@@ -2289,11 +2289,6 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
 
 NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut, cl_mem* input, cl_mem* output)
 {
-    //TEST: Run with fixed array Info
-    float* inTest = malloc(10*sizeof(float));
-    float* outTest = malloc(10*sizeof(float));
-    
-    inTest[0] = 10;
     
     //Need to write to the buffer in this function
     
@@ -2306,7 +2301,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     
     fillGPUTree(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
-    gTreeIn[0].pos[0] = 20;
+    //gTreeIn[0].pos[0] = 20;
 
     //TODO: Figure out why buffer isn't being used by GPU
     err = clEnqueueWriteBuffer(st->ci->queue,
@@ -2317,7 +2312,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
 
-    
+    //Set kernel arguments:
     err = clSetKernelArg(st->kernels->forceCalculation, 0, sizeof(cl_mem), input );
     err = clSetKernelArg(st->kernels->forceCalculation, 1, sizeof(cl_mem), output );
     if(err != CL_SUCCESS)
@@ -2332,7 +2327,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
 
   
     
-    //TODO: Figure out why buffer isn't being used by GPU
+    //Read buffer from GPU
     err = clEnqueueReadBuffer(st->ci->queue,
                         *output,
                         CL_TRUE,
@@ -2342,7 +2337,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
         printf("%i, OH SHIT\n", err);
     
     
-    printf("%f \n", gTreeOut[0].pos[0]);
+    //printf("%f \n", gTreeOut[0].pos[0]);
 
     return NBODY_SUCCESS;
 }
@@ -2394,8 +2389,8 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     
     //Create Buffer:
     CLInfo* ci = st->ci;    
-    gpuTree gTreeIn[st->effNBody];
-    gpuTree gTreeOut[st->effNBody];
+    gpuTree* gTreeIn = malloc(st->effNBody*sizeof(gpuTree));
+    gpuTree* gTreeOut = malloc(st->effNBody*sizeof(gpuTree));
     
     cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
     cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
@@ -2404,7 +2399,13 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     while(st->step < ctx->nStep)
     {
         nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut, &input, &output);
-        printf("%i\n", st->step);
+        //printf("%i\n", st->step);
+    }
+    printf("======================\n");
+    
+    //TODO: Figure out why all positions are zero, not initialized.
+    for(int i = 0; i < st->effNBody; ++i){
+        printf("%f\n", gTreeOut[i].pos[0]);
     }
 
     
