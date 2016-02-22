@@ -254,6 +254,7 @@ NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
     return NBODY_SUCCESS;
 }
 
+//TODO: fix to use proper force calculation initializations
 NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 {
     cl_int err;
@@ -320,7 +321,6 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 
 #else
 
-//NOTE: Why are we void casting these?
 NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
 {
     (void) st, (void) ctx, (void) clr;

@@ -48,11 +48,8 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
     mwbool skipSelf = FALSE;
 
     mwvector pos0 = Pos(p);
+    printf("%f\n", pos0.x);
     mwvector acc0 = ZERO_VECTOR;
-    gpuArray gpuData;
-    initGPUArray(&gpuData, 2);
-    //TODO: Destroy GPUArray
-    
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
     while (q != NULL)               /* while not at end of scan */

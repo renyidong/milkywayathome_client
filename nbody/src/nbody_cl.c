@@ -2205,6 +2205,79 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
     return CL_SUCCESS;
 }
+void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
+    //Create gpu tree array:
+    //Fill TreeArray:
+    const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
+    unsigned int n = 0; //Start at initial index
+    const Body* p = NULL;
+    //printf("%i\n", st->tree.cellUsed);
+    
+    while(q != NULL){
+        mwvector pos;
+        pos = Pos(q);
+        gpT[n].pos[0] = pos.x;
+        gpT[n].pos[1] = pos.y;
+        gpT[n].pos[2] = pos.z;
+        
+        if(isBody(q)){ //Check if q is a body
+            p = q;
+            gpT[n].vel[0] = p->vel.x;
+            gpT[n].vel[1] = p->vel.y;
+            gpT[n].vel[2] = p->vel.z;
+            
+            q = Next(q); //If we are in a body, we can't go deeper
+            gpT[n].next = n+1; //The next index will be our immediate neighbor
+            gpT[n].more = 0;
+        }
+        else{   //If q is not a body, it must be a cell
+            
+            if(ctx->useQuad){ //If using quad, calculate quad moments
+                gpT[n].quad.xx = Quad(q).xx;
+                gpT[n].quad.xy = Quad(q).xy;
+                gpT[n].quad.xz = Quad(q).xz;
+                gpT[n].quad.yy = Quad(q).yy;
+                gpT[n].quad.yz = Quad(q).yz;
+                gpT[n].quad.zz = Quad(q).zz;
+            }
+            else{ //Otherwise initialize to -1
+                gpT[n].quad.xx = -1;
+                gpT[n].quad.xy = -1;
+                gpT[n].quad.xz = -1;
+                gpT[n].quad.yy = -1;
+                gpT[n].quad.yz = -1;
+                gpT[n].quad.zz = -1;
+            }
+            
+            //Set next index
+            unsigned int numChild = 0;
+            if(Next(q) != NULL){
+                const NBodyNode* w = q; //Start at current cell to find out how many children it has
+                while(w != Next(q) && w != NULL)
+                {
+                    while(!isBody(w)) //Follow tree to bottom
+                    {
+                        ++numChild;
+                        w = More(w);
+                    }
+                    ++numChild;
+                    w  = Next(w); //Traverse tree until we get to Next(q), adding children as we go
+                }
+                gpT[n].next = n + 1 + numChild; //Now we know what the Next() index will be
+            }
+            else{ //If there is no next pointer, we point it back to the root
+                gpT[n].next = 0;
+            }
+            gpT[n].more = n + 1;
+            q = More(q); //If we are in a cell, we must go deeper
+        }
+        
+        ++n; //Increment our index
+        //printf("%i \n", n);
+    }
+}
+
+
 void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
 {
     //Create gpu tree array:
@@ -2212,20 +2285,25 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
     unsigned int n = 0; //Start at initial index
     const Body* p = NULL;
+    printf("%i\n", st->tree.cellUsed);
+    printf("%i\n", st->effNBody);
     while(q != NULL)
     {
         //Add Node Data to Array
         //POSITION:
-        gpT[n].pos[0] = q->pos.x;
-        gpT[n].pos[1] = q->pos.y;
-        gpT[n].pos[2] = q->pos.z;
+        mwvector pos = Pos(q);
+        gpT[n].pos[0] = pos.x;
+        gpT[n].pos[1] = pos.y;
+        gpT[n].pos[2] = pos.z;
         
         if(isBody(q))
         {
+            p = q;
         //VELOCITY:
             gpT[n].vel[0] = p->vel.x;
             gpT[n].vel[1] = p->vel.y;
             gpT[n].vel[2] = p->vel.z;
+
         }
         //MASS:
         gpT[n].mass = q->mass;
@@ -2249,7 +2327,6 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
             gpT[n].quad.zz = -1;
         }
             
-            
         //Now set next and more indicies
         if(More(q) != NULL)
         {
@@ -2271,7 +2348,7 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
         {
             unsigned int numChild = 0;
             const NBodyNode* w = q; //Start at current cell to find out how many children it has
-            while(w != Next(q))
+            while(w != Next(q) && w != NULL)
             {
                 while(More(w) != NULL) //Follow tree to bottom
                 {
@@ -2284,14 +2361,24 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
             gpT[n].next = n + 1 + numChild; //Now we know what the Next() index will be
         }
         ++n;
+        printf("%i\n", n);
+        //Set load the next body:
+        if(More(q) != NULL){
+            q = More(q);
+            printf("MORE\n");
+        }
+        else{
+            q = Next(q);
+            printf("NEXT\n");
+        }
     }
 }
 
-NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut, cl_mem* input, cl_mem* output)
+NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
 {
     
     //Need to write to the buffer in this function
-    
+    CLInfo* ci = st->ci;   
     ++st->step;
     cl_int err;
     cl_uint i;
@@ -2299,13 +2386,17 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
 
     st->dirty = TRUE;
     
-    fillGPUTree(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
+    fillGPUTreeFixed(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
     //gTreeIn[0].pos[0] = 20;
+    
+    //Write Buffer:
+    cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
+    cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
 
     //TODO: Figure out why buffer isn't being used by GPU
     err = clEnqueueWriteBuffer(st->ci->queue,
-                        *input,
+                        input,
                         CL_TRUE,
                         0, st->effNBody*sizeof(gpuTree), gTreeIn,
                         0, NULL, NULL);
@@ -2313,8 +2404,8 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
         printf("%i, OH SHIT\n", err);
 
     //Set kernel arguments:
-    err = clSetKernelArg(st->kernels->forceCalculation, 0, sizeof(cl_mem), input );
-    err = clSetKernelArg(st->kernels->forceCalculation, 1, sizeof(cl_mem), output );
+    err = clSetKernelArg(st->kernels->forceCalculation, 0, sizeof(cl_mem), &input );
+    err = clSetKernelArg(st->kernels->forceCalculation, 1, sizeof(cl_mem), &output );
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
@@ -2329,7 +2420,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     
     //Read buffer from GPU
     err = clEnqueueReadBuffer(st->ci->queue,
-                        *output,
+                        output,
                         CL_TRUE,
                         0, st->effNBody*sizeof(gpuTree), gTreeOut,
                         0, NULL, NULL);
@@ -2338,6 +2429,8 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     
     
     //printf("%f \n", gTreeOut[0].pos[0]);
+    clReleaseMemObject(input);
+    clReleaseMemObject(output);
 
     return NBODY_SUCCESS;
 }
@@ -2386,29 +2479,38 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     //FILL GPU VECTOR:
 
+    const Body* b = &st->bodytab[1];
+    mwvector a = Pos(b);
+    printf(">>>>> %f  <<<<< \n", a.x);
     
+    //Create Host Tree:
+    NBodyStatus rc = nbMakeTree(ctx, st);
+    if (nbStatusIsFatal(rc))
+        return rc;
+
     //Create Buffer:
-    CLInfo* ci = st->ci;    
-    gpuTree* gTreeIn = malloc(st->effNBody*sizeof(gpuTree));
-    gpuTree* gTreeOut = malloc(st->effNBody*sizeof(gpuTree));
+    gpuTree* gTreeIn = malloc((st->effNBody + st->tree.cellUsed)*sizeof(gpuTree));
+    gpuTree* gTreeOut = malloc((st->effNBody + st->tree.cellUsed)*sizeof(gpuTree));
     
-    cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
-    cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
+    
+    printf("%i\n", st->tree.cellUsed);
+    printf("%i\n", st->effNBody);
    
     //RUN SYSTEM:
     while(st->step < ctx->nStep)
     {
-        nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut, &input, &output);
+        nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut);
         //printf("%i\n", st->step);
     }
     printf("======================\n");
     
     //TODO: Figure out why all positions are zero, not initialized.
-    for(int i = 0; i < st->effNBody; ++i){
-        printf("%f\n", gTreeOut[i].pos[0]);
-    }
+//     for(int i = 0; i < st->effNBody; ++i){
+//         printf("%f\n", gTreeOut[i].pos[0]);
+//     }
 
-    
+    free(gTreeIn);
+    free(gTreeOut);
     return nbWriteFinalCheckpoint(ctx, st);
 }
 
