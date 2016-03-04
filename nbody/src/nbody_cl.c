@@ -2226,12 +2226,19 @@ void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
             gpT[n].vel[1] = p->vel.y;
             gpT[n].vel[2] = p->vel.z;
             
-            q = Next(q); //If we are in a body, we can't go deeper
-            gpT[n].next = n+1; //The next index will be our immediate neighbor
-            gpT[n].more = 0;
+            gpT[n].isBody = 1; //Flag as body
+            gpT[n].more = 0; //Bodies do not have (more) indices.
+            if(Next(q) != NULL){
+                gpT[n].next = n+1; //The next index will be our immediate neighbor
+            }
+            else{
+                gpT[n].next = 0;
+            }
+            q = Next(q); //If we are in a body, we can't go deeper, have to go next
         }
         else{   //If q is not a body, it must be a cell
             
+            gpT[n].isBody = 0; //Flag as not body
             if(ctx->useQuad){ //If using quad, calculate quad moments
                 gpT[n].quad.xx = Quad(q).xx;
                 gpT[n].quad.xy = Quad(q).xy;
@@ -2269,6 +2276,12 @@ void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
                 gpT[n].next = 0;
             }
             gpT[n].more = n + 1;
+            if(More(q) == NULL){
+                printf("Interesting:\n");
+            }
+            if(gpT[n].more > (st->effNBody + st->tree.cellUsed)){
+                printf("OOPS M8: %i\n", gpT[n].more);
+            }
             q = More(q); //If we are in a cell, we must go deeper
         }
         
@@ -2390,15 +2403,17 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     
     //gTreeIn[0].pos[0] = 20;
     
+    
     //Write Buffer:
-    cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
-    cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, st->effNBody*sizeof(gpuTree), NULL, NULL);
+    int buffSize = st->effNBody + st->tree.cellUsed;
+    cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
+    cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
 
     //TODO: Figure out why buffer isn't being used by GPU
     err = clEnqueueWriteBuffer(st->ci->queue,
                         input,
                         CL_TRUE,
-                        0, st->effNBody*sizeof(gpuTree), gTreeIn,
+                        0, buffSize*sizeof(gpuTree), gTreeIn,
                         0, NULL, NULL);
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
@@ -2422,7 +2437,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     err = clEnqueueReadBuffer(st->ci->queue,
                         output,
                         CL_TRUE,
-                        0, st->effNBody*sizeof(gpuTree), gTreeOut,
+                        0, buffSize*sizeof(gpuTree), gTreeOut,
                         0, NULL, NULL);
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
@@ -2500,14 +2515,17 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     while(st->step < ctx->nStep)
     {
         nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut);
-        //printf("%i\n", st->step);
+        //printf("Step: %i | Position: %f\n", st->step, gTreeOut[0].pos[0]);
     }
     printf("======================\n");
+    if(1){
+        printf("this works\n");
+    }
     
     //TODO: Figure out why all positions are zero, not initialized.
-//     for(int i = 0; i < st->effNBody; ++i){
-//         printf("%f\n", gTreeOut[i].pos[0]);
-//     }
+//      for(int i = 0; i < st->effNBody; ++i){
+//          printf("%f\n", gTreeOut[i].pos[0]);
+//      }
 
     free(gTreeIn);
     free(gTreeOut);

@@ -202,6 +202,7 @@ typedef struct
     cl_mem next; /* TODO: We can reuse other buffers with this later to save memory */
     cl_mem more;
 
+    cl_mem isBody;
     struct
     {
         cl_mem xx, xy, xz;
@@ -299,6 +300,7 @@ typedef struct
     unsigned int next;
     unsigned int more;
 
+    int isBody;
     struct
     {
         real xx, xy, xz;

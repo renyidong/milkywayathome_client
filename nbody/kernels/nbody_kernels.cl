@@ -217,6 +217,7 @@ typedef struct
     unsigned int next;
     unsigned int more;
     
+    int isBody;
     struct
     {
         real xx, xy, xz;
@@ -1131,11 +1132,32 @@ __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
     int a = (int)get_global_id(0);
-    for(int i = 0; i < 3; ++i){
-        _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
-        _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];
-    }
+//     for(int i = 0; i < 3; ++i){
+//         _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
+//         _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];
+//     }
     //TODO: start writing force calculations
+    GTPtr tmp = _gTreeIn;
+    while(tmp != NULL){
+        if(tmp->isBody){ //If it's a body we can go to the next value
+            
+           
+            //////////////////////////////////
+            //Perform force calculation here!
+            //////////////////////////////////
+            
+            
+            if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
+                tmp = &_gTreeIn[tmp->next];
+            }
+            else{ //If there are no more bodies in the (next) index, we must be at the end of the tree
+                tmp = NULL;
+            }
+        }
+        else{ //If not body, then must be cell
+            tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
+        }
+    }
     
 }
     
