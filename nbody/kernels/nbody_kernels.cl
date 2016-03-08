@@ -1132,30 +1132,50 @@ __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
     int a = (int)get_global_id(0);
-//     for(int i = 0; i < 3; ++i){
-//         _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
-//         _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];
-//     }
+    if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread, that would be a waste.
+        _gTreeOut = _gTreeIn;
+    }
+    for(int i = 0; i < 3; ++i){
+       _gTreeOut[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
+    }
     //TODO: start writing force calculations
-    GTPtr tmp = _gTreeIn;
-    while(tmp != NULL){
-        if(tmp->isBody){ //If it's a body we can go to the next value
-            
-           
-            //////////////////////////////////
-            //Perform force calculation here!
-            //////////////////////////////////
-            
-            
-            if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
-                tmp = &_gTreeIn[tmp->next];
+    if(_gTreeIn[a].isBody){
+        GTPtr tmp = _gTreeIn;
+        while(tmp != NULL){
+            if(tmp->isBody){ //If it's a body we can go to the next value
+                
+                real pos1[3];
+                real pos2[3];
+                real drVec[3];
+                for(int i = 0; i < 3; ++i){
+                    pos1[i] = _gTreeIn[a].pos[i];
+                    pos2[i] = tmp->pos[i];
+                    drVec[i] = (pos2[i] - pos1[i]);               
+                }
+                //Calculate distance between two bodies:
+                
+                real dr2 = pow(drVec[0], 2) + pow(drVec[1], 2) + pow(drVec[2], 2);
+                real dr = pow(dr2, 0.5);
+                
+                //Calculate acceleration between the two bodies:
+                _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
+                _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
+                _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
+                //////////////////////////////////
+                //Perform force calculation here!
+                //////////////////////////////////
+                
+                
+                if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
+                    tmp = &_gTreeIn[tmp->next];
+                }
+                else{ //If there are no more bodies in the (next) index, we must be at the end of the tree
+                    tmp = NULL;
+                }
             }
-            else{ //If there are no more bodies in the (next) index, we must be at the end of the tree
-                tmp = NULL;
+            else{ //If not body, then must be cell
+                tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
             }
-        }
-        else{ //If not body, then must be cell
-            tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
         }
     }
     
