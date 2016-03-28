@@ -1131,6 +1131,7 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
+    
     int a = (int)get_global_id(0);
     if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
         _gTreeOut = _gTreeIn;
@@ -1154,8 +1155,8 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                 }
                 //Calculate distance between two bodies:
                 
-                real dr2 = pow(drVec[0], 2) + pow(drVec[1], 2) + pow(drVec[2], 2);
-                real dr = pow(dr2, 0.5);
+                real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], drVec[2] * drVec[2])) + EPS2;
+                real dr = sqrt(dr2);
                 
                 //Calculate acceleration between the two bodies:
                 _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
@@ -1163,10 +1164,6 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                 _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
                 
                 
-                
-                //////////////////////////////////
-                //Perform force calculation here!
-                //////////////////////////////////
                 
                 
                 if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
@@ -1183,16 +1180,88 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
         //_gTreeOut[0].pos[0] = _gTreeOut[0].acc[0];
         //Finally, after finding the total acceleration, we can integrate it:
         //Integrate the acceleration by the timestep and get the values for velocity and position:
-        _gTreeOut[a].pos[0] += (_gTreeIn[a].vel[0] * TIMESTEP) + (_gTreeOut[a].acc[0] * pow(TIMESTEP, 2));
-        _gTreeOut[a].pos[1] += (_gTreeIn[a].vel[1] * TIMESTEP) + (_gTreeOut[a].acc[1] * pow(TIMESTEP, 2));
-        _gTreeOut[a].pos[2] += (_gTreeIn[a].vel[2] * TIMESTEP) + (_gTreeOut[a].acc[2] * pow(TIMESTEP, 2));
         
-        //Velocity changes at end of the timestep:
-        _gTreeOut[a].vel[0] += _gTreeOut[a].acc[0] * TIMESTEP;
-        _gTreeOut[a].vel[1] += _gTreeOut[a].acc[1] * TIMESTEP;
-        _gTreeOut[a].vel[2] += _gTreeOut[a].acc[2] * TIMESTEP;
+        real px = _gTreeIn[a].pos[0];
+        real py = _gTreeIn[a].pos[1];
+        real pz = _gTreeIn[a].pos[2];
+        
+        real vx = _gTreeIn[a].vel[0];
+        real vy = _gTreeIn[a].vel[1];
+        real vz = _gTreeIn[a].vel[2];
+        
+        real ax = _gTreeOut[a].acc[0];
+        real ay = _gTreeOut[a].acc[1];
+        real az = _gTreeOut[a].acc[2];
+        
+        real dvx = 0.5 * TIMESTEP * _gTreeOut[a].acc[0];
+        real dvy = 0.5 * TIMESTEP * _gTreeOut[a].acc[1];
+        real dvz = 0.5 * TIMESTEP * _gTreeOut[a].acc[2];
+        
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
+        
+        _gTreeOut[a].pos[0] = mad(TIMESTEP, vx, _gTreeIn[a].pos[0]);
+        _gTreeOut[a].pos[1] = mad(TIMESTEP, vy, _gTreeIn[a].pos[1]);
+        _gTreeOut[a].pos[2] = mad(TIMESTEP, vz, _gTreeIn[a].pos[2]);
+        
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
+        
+        _gTreeOut[a].vel[0] = vx;
+        _gTreeOut[a].vel[1] = vy;
+        _gTreeOut[a].vel[2] = vz;
+        
+//        real px = _posX[i];
+//         real py = _posY[i];
+//         real pz = _posZ[i];
+// 
+//         real ax = _accX[i];
+//         real ay = _accY[i];
+//         real az = _accZ[i];
+// 
+//         real vx = _velX[i];
+//         real vy = _velY[i];
+//         real vz = _velZ[i];
+// 
+// 
+//         real dvx = (0.5 * TIMESTEP) * ax;
+//         real dvy = (0.5 * TIMESTEP) * ay;
+//         real dvz = (0.5 * TIMESTEP) * az;
+// 
+//         vx += dvx;
+//         vy += dvy;
+//         vz += dvz;
+// 
+//         px = mad(TIMESTEP, vx, px);
+//         py = mad(TIMESTEP, vy, py);
+//         pz = mad(TIMESTEP, vz, pz);
+// 
+//         vx += dvx;
+//         vy += dvy;
+//         vz += dvz;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+//         _gTreeOut[a].pos[0] += (_gTreeIn[a].vel[0] * TIMESTEP) + (_gTreeOut[a].acc[0] * pow(TIMESTEP, 2));
+//         _gTreeOut[a].pos[1] += (_gTreeIn[a].vel[1] * TIMESTEP) + (_gTreeOut[a].acc[1] * pow(TIMESTEP, 2));
+//         _gTreeOut[a].pos[2] += (_gTreeIn[a].vel[2] * TIMESTEP) + (_gTreeOut[a].acc[2] * pow(TIMESTEP, 2));
+//         
+//         //Velocity changes at end of the timestep:
+//         _gTreeOut[a].vel[0] += _gTreeOut[a].acc[0] * TIMESTEP;
+//         _gTreeOut[a].vel[1] += _gTreeOut[a].acc[1] * TIMESTEP;
+//         _gTreeOut[a].vel[2] += _gTreeOut[a].acc[2] * TIMESTEP;
     }
-    
 }
     
     

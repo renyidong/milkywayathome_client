@@ -318,6 +318,7 @@ typedef struct
     unsigned int size;
 }gpuArray;
 
+void copyGPUTree(gpuTree* a, gpuTree* b, int n);
 void initGPUArray(gpuArray *a, unsigned int initialSize);
 void insertGPUArray(gpuArray *a, gpuTree element);
 void freeGPUArray(gpuArray *a);

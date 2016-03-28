@@ -2219,13 +2219,13 @@ void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
         gpT[n].pos[0] = pos.x;
         gpT[n].pos[1] = pos.y;
         gpT[n].pos[2] = pos.z;
+        gpT[n].mass = q->mass; //Set mass
         
         if(isBody(q)){ //Check if q is a body
             p = q;
             gpT[n].vel[0] = p->vel.x;
             gpT[n].vel[1] = p->vel.y;
             gpT[n].vel[2] = p->vel.z;
-            
             gpT[n].isBody = 1; //Flag as body
             gpT[n].more = 0; //Bodies do not have (more) indices.
             if(Next(q) != NULL){
@@ -2320,6 +2320,7 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
         }
         //MASS:
         gpT[n].mass = q->mass;
+        //printf("THE MASS IS: %f\n", gpT[10].mass);
         //QUAD:
         if(ctx->useQuad && isCell(q)) //If Cell, and using quad, calculate quad moments
         {
@@ -2399,7 +2400,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
 
     st->dirty = TRUE;
     
-    fillGPUTreeFixed(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
+    
     
     //gTreeIn[0].pos[0] = 20;
     
@@ -2442,8 +2443,12 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    
-    printf("Position: %f \n", gTreeOut[0].pos[0]);
+    if(gTreeOut[10].isBody){
+        printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
+        printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
+        printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
+        printf("---------------------------------------\n");
+    }
     clReleaseMemObject(input);
     clReleaseMemObject(output);
 
@@ -2504,9 +2509,11 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
         return rc;
 
     //Create Buffer:
-    gpuTree* gTreeIn = malloc((st->effNBody + st->tree.cellUsed)*sizeof(gpuTree));
-    gpuTree* gTreeOut = malloc((st->effNBody + st->tree.cellUsed)*sizeof(gpuTree));
+    int n = (st->effNBody + st->tree.cellUsed);
+    gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));
+    gpuTree* gTreeOut = malloc(n*sizeof(gpuTree));
     
+    fillGPUTreeFixed(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
     printf("%i\n", st->tree.cellUsed);
     printf("%i\n", st->effNBody);
@@ -2515,8 +2522,14 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     while(st->step < ctx->nStep)
     {
         nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut);
-        *gTreeIn = *gTreeOut;
-        printf("Step: %i | Acceleration: %f\n", st->step, gTreeOut[0].acc[0]);
+        copyGPUTree(gTreeIn, gTreeOut, n);
+        
+//         if(gTreeOut[10].isBody){
+//             printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
+//             printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
+//             printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
+//             printf("---------------------------------------\n");
+//         }
     }
     printf("======================\n");
     if(1){

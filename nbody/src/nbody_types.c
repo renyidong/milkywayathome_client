@@ -165,6 +165,25 @@ int destroyNBodyState(NBodyState* st)
     return failed;
 }
 
+void copyGPUTree(gpuTree* a, gpuTree* b, int n){
+    for(int j = 0; j < n; ++j){
+        for(int i = 0; i < 3; ++i){
+            a[j].pos[i] = b[j].pos[i];
+            a[j].vel[i] = b[j].vel[i];
+            a[j].acc[i] = b[j].acc[i];
+        }
+        
+        a[j].mass = b[j].mass;
+        
+        a[j].quad.xx = b[j].quad.xx;
+        a[j].quad.xy = b[j].quad.xy;
+        a[j].quad.xz = b[j].quad.xz;
+        a[j].quad.yy = b[j].quad.yy;
+        a[j].quad.yz = b[j].quad.yz;
+        a[j].quad.zz = b[j].quad.zz;
+    }
+}
+
 //////////////////////////
 //BEGIN Dynamic GPU Array:
 //////////////////////////
