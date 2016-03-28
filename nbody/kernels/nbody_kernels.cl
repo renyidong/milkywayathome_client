@@ -1132,7 +1132,7 @@ __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
     int a = (int)get_global_id(0);
-    if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread, that would be a waste.
+    if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
         _gTreeOut = _gTreeIn;
     }
     for(int i = 0; i < 3; ++i){
@@ -1161,6 +1161,9 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                 _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
                 _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
                 _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
+                
+                
+                
                 //////////////////////////////////
                 //Perform force calculation here!
                 //////////////////////////////////
@@ -1177,6 +1180,17 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                 tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
             }
         }
+        //_gTreeOut[0].pos[0] = _gTreeOut[0].acc[0];
+        //Finally, after finding the total acceleration, we can integrate it:
+        //Integrate the acceleration by the timestep and get the values for velocity and position:
+        _gTreeOut[a].pos[0] += (_gTreeIn[a].vel[0] * TIMESTEP) + (_gTreeOut[a].acc[0] * pow(TIMESTEP, 2));
+        _gTreeOut[a].pos[1] += (_gTreeIn[a].vel[1] * TIMESTEP) + (_gTreeOut[a].acc[1] * pow(TIMESTEP, 2));
+        _gTreeOut[a].pos[2] += (_gTreeIn[a].vel[2] * TIMESTEP) + (_gTreeOut[a].acc[2] * pow(TIMESTEP, 2));
+        
+        //Velocity changes at end of the timestep:
+        _gTreeOut[a].vel[0] += _gTreeOut[a].acc[0] * TIMESTEP;
+        _gTreeOut[a].vel[1] += _gTreeOut[a].acc[1] * TIMESTEP;
+        _gTreeOut[a].vel[2] += _gTreeOut[a].acc[2] * TIMESTEP;
     }
     
 }

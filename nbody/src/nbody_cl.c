@@ -2443,7 +2443,7 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
         printf("%i, OH SHIT\n", err);
     
     
-    //printf("%f \n", gTreeOut[0].pos[0]);
+    printf("Position: %f \n", gTreeOut[0].pos[0]);
     clReleaseMemObject(input);
     clReleaseMemObject(output);
 
@@ -2515,7 +2515,8 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     while(st->step < ctx->nStep)
     {
         nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut);
-        //printf("Step: %i | Position: %f\n", st->step, gTreeOut[0].pos[0]);
+        *gTreeIn = *gTreeOut;
+        printf("Step: %i | Acceleration: %f\n", st->step, gTreeOut[0].acc[0]);
     }
     printf("======================\n");
     if(1){
