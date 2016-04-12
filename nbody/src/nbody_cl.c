@@ -2541,6 +2541,9 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 //          printf("%f\n", gTreeOut[i].pos[0]);
 //      }
 
+    //TODO: REBUILD TREE:
+    
+
     free(gTreeIn);
     free(gTreeOut);
     return nbWriteFinalCheckpoint(ctx, st);

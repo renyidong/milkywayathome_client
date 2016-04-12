@@ -1144,26 +1144,26 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
         GTPtr tmp = _gTreeIn;
         while(tmp != NULL){
             if(tmp->isBody){ //If it's a body we can go to the next value
-                
-                real pos1[3];
-                real pos2[3];
-                real drVec[3];
-                for(int i = 0; i < 3; ++i){
-                    pos1[i] = _gTreeIn[a].pos[i];
-                    pos2[i] = tmp->pos[i];
-                    drVec[i] = (pos2[i] - pos1[i]);               
+                if(tmp != &_gTreeIn[a]){    //make sure we aren't self-interacting:
+                    real pos1[3];
+                    real pos2[3];
+                    real drVec[3];
+                    for(int i = 0; i < 3; ++i){
+                        pos1[i] = _gTreeIn[a].pos[i];
+                        pos2[i] = tmp->pos[i];
+                        drVec[i] = (pos2[i] - pos1[i]);               
+                    }
+                    //Calculate distance between two bodies:
+                    
+                    real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], drVec[2] * drVec[2])) + EPS2;
+                    real dr = sqrt(dr2);
+                    
+                    //Calculate acceleration between the two bodies:
+                    _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
+                    _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
+                    _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
                 }
-                //Calculate distance between two bodies:
-                
-                real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], drVec[2] * drVec[2])) + EPS2;
-                real dr = sqrt(dr2);
-                
-                //Calculate acceleration between the two bodies:
-                _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
-                _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
-                _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
-                
-                
+                    
                 
                 
                 if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
