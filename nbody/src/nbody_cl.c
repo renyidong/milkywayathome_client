@@ -2443,12 +2443,12 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    if(gTreeOut[10].isBody){
-        printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
-        printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
-        printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
-        printf("---------------------------------------\n");
-    }
+//     if(gTreeOut[10].isBody){
+//         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
+//         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
+//         printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
+//         printf("---------------------------------------\n");
+//     }
     clReleaseMemObject(input);
     clReleaseMemObject(output);
 
@@ -2515,21 +2515,35 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     
     fillGPUTreeFixed(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
-    printf("%i\n", st->tree.cellUsed);
-    printf("%i\n", st->effNBody);
+   int test = 0;
+        while(!gTreeOut[test].isBody){
+            ++test;
+        }
+        
+        if(gTreeOut[test].isBody){
+            printf("Position: %f | %f \n", gTreeIn[test].pos[0], gTreeOut[test].pos[0]);
+            printf("Velocity: %f | %f \n", gTreeIn[test].vel[0], gTreeOut[test].vel[0]);
+            printf("Acceleration: %f | %f \n", gTreeIn[test].acc[0], gTreeOut[test].acc[0]);
+            printf("---------------------------------------\n");
+        }
+    
    
     //RUN SYSTEM:
-    while(st->step < ctx->nStep)
+    while(st->step < 1/*ctx->nStep*/)
     {
         nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut);
         copyGPUTree(gTreeIn, gTreeOut, n);
+        test = 0;
+        while(!gTreeOut[test].isBody){
+            ++test;
+        }
         
-//         if(gTreeOut[10].isBody){
-//             printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
-//             printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
-//             printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
-//             printf("---------------------------------------\n");
-//         }
+        if(gTreeOut[test].isBody){
+            printf("Position: %f | %f \n", gTreeIn[test].pos[0], gTreeOut[test].pos[0]);
+            printf("Velocity: %f | %f \n", gTreeIn[test].vel[0], gTreeOut[test].vel[0]);
+            printf("Acceleration: %f | %f \n", gTreeIn[test].acc[0], gTreeOut[test].acc[0]);
+            printf("---------------------------------------\n");
+        }
     }
     printf("======================\n");
     if(1){
