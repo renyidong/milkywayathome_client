@@ -2220,6 +2220,7 @@ void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
         gpT[n].pos[1] = pos.y;
         gpT[n].pos[2] = pos.z;
         gpT[n].mass = q->mass; //Set mass
+        //printf("%f\n", gpT[n].mass);
         
         if(isBody(q)){ //Check if q is a body
             p = q;
@@ -2443,12 +2444,12 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    if(gTreeOut[10].isBody){
-        printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
-        printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
-        printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
-        printf("---------------------------------------\n");
-    }
+//     if(gTreeOut[10].isBody){
+//         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
+//         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
+//         printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
+//         printf("---------------------------------------\n");
+//     }
     clReleaseMemObject(input);
     clReleaseMemObject(output);
 
@@ -2517,7 +2518,9 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     
     printf("%i\n", st->tree.cellUsed);
     printf("%i\n", st->effNBody);
-   
+    for(int i = 0; i < n; ++i){
+        printf("%f, %f\n", gTreeIn[n].mass, gTreeIn[n].pos[0]);
+    }
     //RUN SYSTEM:
     while(st->step < ctx->nStep)
     {
@@ -2532,6 +2535,9 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 //         }
     }
     printf("======================\n");
+    for(int i = 0; i < n; ++i){
+        printf("%f, %f\n", gTreeIn[n].mass, gTreeIn[n].pos[0]);
+    }
     if(1){
         printf("this works\n");
     }

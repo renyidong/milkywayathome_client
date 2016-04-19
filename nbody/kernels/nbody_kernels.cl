@@ -1151,7 +1151,7 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                     for(int i = 0; i < 3; ++i){
                         pos1[i] = _gTreeIn[a].pos[i];
                         pos2[i] = tmp->pos[i];
-                        drVec[i] = (pos2[i] - pos1[i]);               
+                        drVec[i] = (pos1[i] - pos2[i]);               
                     }
                     //Calculate distance between two bodies:
                     
@@ -1159,9 +1159,12 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                     real dr = sqrt(dr2);
                     
                     //Calculate acceleration between the two bodies:
-                    _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
-                    _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
-                    _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
+                    _gTreeOut[a].acc[0] += dr2*dr;
+                    _gTreeOut[a].acc[1] += dr2*dr;
+                    _gTreeOut[a].acc[2] += dr2*dr;
+//                     _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
+//                     _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
+//                     _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
                 }
                     
                 
@@ -1185,9 +1188,14 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
         real py = _gTreeIn[a].pos[1];
         real pz = _gTreeIn[a].pos[2];
         
-        real vx = _gTreeIn[a].vel[0];
-        real vy = _gTreeIn[a].vel[1];
-        real vz = _gTreeIn[a].vel[2];
+//         real vx = _gTreeIn[a].vel[0];
+//         real vy = _gTreeIn[a].vel[1];
+//         real vz = _gTreeIn[a].vel[2];
+
+        real vx = 10;
+        real vy = 10;
+        real vz = 10;
+
         
         real ax = _gTreeOut[a].acc[0];
         real ay = _gTreeOut[a].acc[1];
@@ -1197,17 +1205,17 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
         real dvy = 0.5 * TIMESTEP * _gTreeOut[a].acc[1];
         real dvz = 0.5 * TIMESTEP * _gTreeOut[a].acc[2];
         
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
+//         vx += dvx;
+//         vy += dvy;
+//         vz += dvz;
         
         _gTreeOut[a].pos[0] = mad(TIMESTEP, vx, _gTreeIn[a].pos[0]);
         _gTreeOut[a].pos[1] = mad(TIMESTEP, vy, _gTreeIn[a].pos[1]);
         _gTreeOut[a].pos[2] = mad(TIMESTEP, vz, _gTreeIn[a].pos[2]);
         
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
+//         vx += dvx;
+//         vy += dvy;
+//         vz += dvz;
         
         _gTreeOut[a].vel[0] = vx;
         _gTreeOut[a].vel[1] = vy;
