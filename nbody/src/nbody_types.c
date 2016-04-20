@@ -175,6 +175,8 @@ void copyGPUTree(gpuTree* a, gpuTree* b, int n){
         
         a[j].mass = b[j].mass;
         
+        a[j].isBody = b[j].isBody;
+        
         a[j].quad.xx = b[j].quad.xx;
         a[j].quad.xy = b[j].quad.xy;
         a[j].quad.xz = b[j].quad.xz;

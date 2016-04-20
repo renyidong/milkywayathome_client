@@ -206,7 +206,7 @@ typedef struct
 } QuadMatrix;
 
 //Structure that holds flattened GPU tree:
-typedef struct
+typedef struct 
 {
     real pos[3];
     real vel[3];
@@ -1133,9 +1133,11 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
     
     int a = (int)get_global_id(0);
-    if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
-        _gTreeOut = _gTreeIn;
-    }
+//     if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
+//         _gTreeOut = _gTreeIn;
+//     }
+    _gTreeOut[a].mass = _gTreeIn[a].mass;
+    _gTreeOut[a].isBody = _gTreeIn[a].isBody;
     for(int i = 0; i < 3; ++i){
        _gTreeOut[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
     }
@@ -1159,12 +1161,12 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                     real dr = sqrt(dr2);
                     
                     //Calculate acceleration between the two bodies:
-                    _gTreeOut[a].acc[0] += dr2*dr;
-                    _gTreeOut[a].acc[1] += dr2*dr;
-                    _gTreeOut[a].acc[2] += dr2*dr;
-//                     _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
-//                     _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
-//                     _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
+//                     _gTreeOut[a].acc[0] += 10;
+//                     _gTreeOut[a].acc[1] += 10;
+//                     _gTreeOut[a].acc[2] += 10;
+                    _gTreeOut[a].acc[0] += (tmp->mass * drVec[0])/(dr2*dr);
+                    _gTreeOut[a].acc[1] += (tmp->mass * drVec[1])/(dr2*dr);
+                    _gTreeOut[a].acc[2] += (tmp->mass * drVec[2])/(dr2*dr);
                 }
                     
                 
@@ -1180,6 +1182,7 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                 tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
             }
         }
+//=============================================================
         //_gTreeOut[0].pos[0] = _gTreeOut[0].acc[0];
         //Finally, after finding the total acceleration, we can integrate it:
         //Integrate the acceleration by the timestep and get the values for velocity and position:
@@ -1188,13 +1191,13 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
         real py = _gTreeIn[a].pos[1];
         real pz = _gTreeIn[a].pos[2];
         
-//         real vx = _gTreeIn[a].vel[0];
-//         real vy = _gTreeIn[a].vel[1];
-//         real vz = _gTreeIn[a].vel[2];
+        real vx = _gTreeIn[a].vel[0];
+        real vy = _gTreeIn[a].vel[1];
+        real vz = _gTreeIn[a].vel[2];
 
-        real vx = 10;
-        real vy = 10;
-        real vz = 10;
+//         real vx = 1;
+//         real vy = 1;
+//         real vz = 1;
 
         
         real ax = _gTreeOut[a].acc[0];
@@ -1205,71 +1208,29 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
         real dvy = 0.5 * TIMESTEP * _gTreeOut[a].acc[1];
         real dvz = 0.5 * TIMESTEP * _gTreeOut[a].acc[2];
         
-//         vx += dvx;
-//         vy += dvy;
-//         vz += dvz;
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
         
         _gTreeOut[a].pos[0] = mad(TIMESTEP, vx, _gTreeIn[a].pos[0]);
         _gTreeOut[a].pos[1] = mad(TIMESTEP, vy, _gTreeIn[a].pos[1]);
         _gTreeOut[a].pos[2] = mad(TIMESTEP, vz, _gTreeIn[a].pos[2]);
         
-//         vx += dvx;
-//         vy += dvy;
-//         vz += dvz;
+//         _gTreeOut[a].pos[0] = _gTreeIn[a].pos[0];
+//         _gTreeOut[a].pos[1] = _gTreeIn[a].pos[1];
+//         _gTreeOut[a].pos[2] = _gTreeIn[a].pos[2];
+//         
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
         
         _gTreeOut[a].vel[0] = vx;
         _gTreeOut[a].vel[1] = vy;
         _gTreeOut[a].vel[2] = vz;
-        
-//        real px = _posX[i];
-//         real py = _posY[i];
-//         real pz = _posZ[i];
-// 
-//         real ax = _accX[i];
-//         real ay = _accY[i];
-//         real az = _accZ[i];
-// 
-//         real vx = _velX[i];
-//         real vy = _velY[i];
-//         real vz = _velZ[i];
-// 
-// 
-//         real dvx = (0.5 * TIMESTEP) * ax;
-//         real dvy = (0.5 * TIMESTEP) * ay;
-//         real dvz = (0.5 * TIMESTEP) * az;
-// 
-//         vx += dvx;
-//         vy += dvy;
-//         vz += dvz;
-// 
-//         px = mad(TIMESTEP, vx, px);
-//         py = mad(TIMESTEP, vy, py);
-//         pz = mad(TIMESTEP, vz, pz);
-// 
-//         vx += dvx;
-//         vy += dvy;
-//         vz += dvz;
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-//         _gTreeOut[a].pos[0] += (_gTreeIn[a].vel[0] * TIMESTEP) + (_gTreeOut[a].acc[0] * pow(TIMESTEP, 2));
-//         _gTreeOut[a].pos[1] += (_gTreeIn[a].vel[1] * TIMESTEP) + (_gTreeOut[a].acc[1] * pow(TIMESTEP, 2));
-//         _gTreeOut[a].pos[2] += (_gTreeIn[a].vel[2] * TIMESTEP) + (_gTreeOut[a].acc[2] * pow(TIMESTEP, 2));
-//         
-//         //Velocity changes at end of the timestep:
-//         _gTreeOut[a].vel[0] += _gTreeOut[a].acc[0] * TIMESTEP;
-//         _gTreeOut[a].vel[1] += _gTreeOut[a].acc[1] * TIMESTEP;
-//         _gTreeOut[a].vel[2] += _gTreeOut[a].acc[2] * TIMESTEP;
     }
+    
+    barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+//=========================================
 }
     
     
