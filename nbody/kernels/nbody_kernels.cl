@@ -1153,7 +1153,7 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
                     for(int i = 0; i < 3; ++i){
                         pos1[i] = _gTreeIn[a].pos[i];
                         pos2[i] = tmp->pos[i];
-                        drVec[i] = (pos1[i] - pos2[i]);               
+                        drVec[i] = (pos2[i] - pos1[i]);               
                     }
                     //Calculate distance between two bodies:
                     

@@ -2520,6 +2520,9 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     printf("%i\n", st->effNBody);
     for(int i = 0; i < n; ++i){
         if(gTreeIn[i].isBody){
+//             gTreeIn[i].vel[0] = 0;
+//             gTreeIn[i].vel[1] = 0;
+//             gTreeIn[i].vel[2] = 0;
             printf("%f, %f, %i\n", gTreeIn[i].mass, gTreeIn[i].pos[0], gTreeIn[i].isBody);
         }
     }
@@ -2533,19 +2536,20 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
             ++test;
         }
         if(gTreeOut[test].isBody){
-            printf("Position: %f | %f \n", gTreeIn[test].pos[0], gTreeOut[test].pos[0]);
-            printf("Velocity: %f | %f \n", gTreeIn[test].vel[0], gTreeOut[test].vel[0]);
-            printf("Acceleration: %f | %f \n", gTreeIn[test].acc[0], gTreeOut[test].acc[0]);
-            printf("---------------------------------------\n");
+            printf("%f, %f, %f, %f, %i\n", gTreeIn[test].mass, gTreeIn[test].pos[0], gTreeIn[test].vel[0], gTreeIn[test].acc[0], gTreeIn[test].isBody);
+//             printf("Position: %f | %f \n", gTreeIn[test].pos[0], gTreeOut[test].pos[0]);
+//             printf("Velocity: %f | %f \n", gTreeIn[test].vel[0], gTreeOut[test].vel[0]);
+//             printf("Acceleration: %f | %f \n", gTreeIn[test].acc[0], gTreeOut[test].acc[0]);
+//             printf("---------------------------------------\n");
         }
         copyGPUTree(gTreeIn, gTreeOut, n);
     }
     printf("======================\n");
-    for(int i = 0; i < n; ++i){
-        if(gTreeIn[i].isBody){
-            printf("%f, %f, %i\n", gTreeIn[i].mass, gTreeIn[i].pos[0], gTreeIn[i].isBody);
-        }
-    }
+//     for(int i = 0; i < n; ++i){
+//         if(gTreeIn[i].isBody){
+//             printf("%f, %f, %i\n", gTreeIn[i].mass, gTreeIn[i].pos[0], gTreeIn[i].isBody);
+//         }
+//     }
     if(1){
         printf("this works\n");
     }
