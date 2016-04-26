@@ -2394,7 +2394,6 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     
     //Need to write to the buffer in this function
     CLInfo* ci = st->ci;   
-    ++st->step;
     cl_int err;
     cl_uint i;
     cl_command_queue q = st->ci->queue;
@@ -2426,13 +2425,16 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    err = nbExecuteForceKernels(st, CL_TRUE);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error executing force kernels");
-        return NBODY_CL_ERROR;
+    while(st->step < ctx->nStep){
+        err = nbExecuteForceKernels(st, CL_TRUE);
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error executing force kernels");
+            return NBODY_CL_ERROR;
+        }
+        //printf("%i\n", st->step);
+        ++st->step;
     }
-
   
     
     //Read buffer from GPU
@@ -2516,8 +2518,9 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     
     fillGPUTreeFixed(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
-    printf("%i\n", st->tree.cellUsed);
-    printf("%i\n", st->effNBody);
+    printf("Cells Used: %i\n", st->tree.cellUsed);
+    printf("Bodies in Simulation: %i\n", st->effNBody);
+    printf("Total Structure Size: %i\n", n);
     for(int i = 0; i < n; ++i){
         if(gTreeIn[i].isBody){
 //             gTreeIn[i].vel[0] = 0;
