@@ -1128,6 +1128,11 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 #define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellSurvey(allBlock, base, (rSq) >= (dq))
 #endif
 
+// __kernel void bruteForceCalculationManager(GTPtr _gTreeIn, GTPtr _gTreeOut)
+// {
+//  forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut   
+// }
+
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
