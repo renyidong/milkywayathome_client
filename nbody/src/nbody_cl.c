@@ -2389,7 +2389,7 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
     }
 }
 
-NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
+NBodyStatus nbRunSystemCLBruteForce(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
 {
     
     //Need to write to the buffer in this function
@@ -2452,10 +2452,23 @@ NBodyStatus nbStepSystemCLClean(const NBodyCtx* ctx, NBodyState* st, gpuTree* gT
 //     }
     clReleaseMemObject(input);
     clReleaseMemObject(output);
+    
+    printf("BEGINNING STRIP\n");
+    nbStripBodies(st, gTreeOut);
+    printf("BODIES STRIPPED\n");
+    NBodyStatus rc = nbMakeTree(ctx, st);
+    if (nbStatusIsFatal(rc))
+        return rc;
+
+    printf("TREE RECONSTRUCTION COMPLETE\n");
+    
 
     return NBODY_SUCCESS;
 }
-
+//TODO: Write Barnes-Hut kernel handler
+NBodyStatus nbRunSystemCLBarnesHut(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
+{
+}
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -2496,10 +2509,25 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
     return NBODY_SUCCESS;
 }
 
+NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip bodies out of GPU Tree
+    int n = (st->effNBody + st->tree.cellUsed);
+    int j = 0;
+    for(int i = 0; i < n; ++i){
+        if(gpuData[n].isBody){
+            st->bodytab[j].bodynode.pos.x = gpuData[n].pos[0];
+            st->bodytab[j].bodynode.pos.y = gpuData[n].pos[1];
+            st->bodytab[j].bodynode.pos.z = gpuData[n].pos[2];
+            st->bodytab[j].bodynode.mass = gpuData[n].mass;
+            st->bodytab[j].vel.x = gpuData[n].vel[0];
+            st->bodytab[j].vel.y = gpuData[n].vel[1];
+            st->bodytab[j].vel.z = gpuData[n].vel[2];
+        }
+    }
+}
+
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     //FILL GPU VECTOR:
-
     const Body* b = &st->bodytab[1];
     mwvector a = Pos(b);
     printf(">>>>> %f  <<<<< \n", a.x);
@@ -2518,50 +2546,17 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     
     printf("%i\n", st->tree.cellUsed);
     printf("%i\n", st->effNBody);
-    for(int i = 0; i < n; ++i){
-        if(gTreeIn[i].isBody){
-//             gTreeIn[i].vel[0] = 0;
-//             gTreeIn[i].vel[1] = 0;
-//             gTreeIn[i].vel[2] = 0;
-//            printf("%f, %f, %i\n", gTreeIn[i].mass, gTreeIn[i].pos[0], gTreeIn[i].isBody);
-        }
-    }
+    
+    ////////////////////
     //RUN SYSTEM:
-    while(st->step < 1/*ctx->nStep*/)
-    {
-        nbStepSystemCLClean(ctx, st, gTreeIn, gTreeOut);
-        int test = 0;
-        while(!gTreeOut[test].isBody)
-        {
-            ++test;
-        }
-        if(gTreeOut[test].isBody){
-//             printf("%f, %f, %f, %f, %i\n", gTreeIn[test].mass, gTreeIn[test].pos[0], gTreeIn[test].vel[0], gTreeIn[test].acc[0], gTreeIn[test].isBody);
-//             printf("Position: %f | %f \n", gTreeIn[test].pos[0], gTreeOut[test].pos[0]);
-//             printf("Velocity: %f | %f \n", gTreeIn[test].vel[0], gTreeOut[test].vel[0]);
-//             printf("Acceleration: %f | %f \n", gTreeIn[test].acc[0], gTreeOut[test].acc[0]);
-//             printf("---------------------------------------\n");
-        }
-        copyGPUTree(gTreeIn, gTreeOut, n);
-    }
-    printf("======================\n");
-//     for(int i = 0; i < n; ++i){
-//         if(gTreeIn[i].isBody){
-//             printf("%f, %f, %i\n", gTreeIn[i].mass, gTreeIn[i].pos[0], gTreeIn[i].isBody);
-//         }
-//     }
-    if(1){
-        printf("this works\n");
-    }
+    ////////////////////
     
-    //TODO: Figure out why all positions are zero, not initialized.
-//      for(int i = 0; i < st->effNBody; ++i){
-//          printf("%f\n", gTreeOut[i].pos[0]);
-//      }
-
-    //TODO: REBUILD TREE:
+    //RUN BRUTE FORCE SYSTEM:
+    nbRunSystemCLBruteForce(ctx, st, gTreeIn, gTreeOut);
     
-
+    //RUN BARNES-HUT SYSTEM:
+    nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
+    
     free(gTreeIn);
     free(gTreeOut);
     return nbWriteFinalCheckpoint(ctx, st);
