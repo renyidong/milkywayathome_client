@@ -718,9 +718,10 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 //     kernels->sort = mwCreateKernel(program, "sort");
     kernels->forceCalculation = mwCreateKernel(program, "forceCalculation");
 //     kernels->integration = mwCreateKernel(program, "integration");
-//     kernels->forceCalculation_Exact = mwCreateKernel(program, "forceCalculation_Exact");
+    kernels->forceCalculationExact = mwCreateKernel(program, "forceCalculationExact");
 //     kernels->testAddition = mwCreateKernel(program, "testAddition");
-    return( kernels->forceCalculation );
+    return(     kernels->forceCalculation
+            &&  kernels->forceCalculationExact);
 //     return (   kernels->boundingBox
 //             && kernels->buildTreeClear
 //             && kernels->buildTree
@@ -1448,7 +1449,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     }
     else
     {
-        forceKern = kernels->forceCalculation;
+        forceKern = kernels->forceCalculationExact;
         global[0] = ws->global[5];
         local[0] = ws->local[5];
     }
@@ -2421,8 +2422,8 @@ NBodyStatus nbRunSystemCLBruteForce(const NBodyCtx* ctx, NBodyState* st, gpuTree
         printf("%i, OH SHIT\n", err);
 
     //Set kernel arguments:
-    err = clSetKernelArg(st->kernels->forceCalculation, 0, sizeof(cl_mem), &input );
-    err = clSetKernelArg(st->kernels->forceCalculation, 1, sizeof(cl_mem), &output );
+    err = clSetKernelArg(st->kernels->forceCalculationExact, 0, sizeof(cl_mem), &input );
+    err = clSetKernelArg(st->kernels->forceCalculationExact, 1, sizeof(cl_mem), &output );
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     

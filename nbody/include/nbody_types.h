@@ -280,7 +280,7 @@ typedef struct
     cl_kernel testAddition;
 
     //Used by exact one only
-//     cl_kernel forceCalculation_Exact;
+    cl_kernel forceCalculationExact;
 } NBodyKernels;
 
 #endif /* NBODY_OPENCL */
