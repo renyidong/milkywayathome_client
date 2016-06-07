@@ -1599,8 +1599,8 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
         return CL_SUCCESS;
     }
 
-    err |= clReleaseMemObject(nbb->input);
-    err |= clReleaseMemObject(nbb->output);
+    //err |= clReleaseMemObject(nbb->input);
+    //err |= clReleaseMemObject(nbb->output);
 
 //     for (j = 0; j < nDummy; ++j)
 //     {
@@ -1681,13 +1681,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
     cl_int err;
-    cl_uint buffSize = nbFindNNode(&ci->di, st->effNBody);
-    printf("BUFFER SIZE: %f<<<<<\n", buffSize);
-    nbb->input = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree) );
-    nbb->output = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree) );
-    if(!nbb->input || !nbb->output){
-        return MW_CL_ERROR;
-    }
+   
     // nbb->input = clCreateBuffer(ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
     // nbb->output = clCreateBuffer(ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
 //     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
@@ -1992,7 +1986,7 @@ static cl_int nbPrintQuadMomentDifferences(const NBodyCtx* ctx, NBodyState* st)
     const real threshold = 1.0e-6;
   #endif
 
-    err = nbEnqueueReadRootQuadMoment(st, &quad);
+    //err = nbEnqueueReadRootQuadMoment(st, &quad);
     err |= nbMarshalBodies(st, CL_FALSE);
     if (err != CL_SUCCESS)
         return err;
@@ -2137,7 +2131,7 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
     {
         cl_int err;
 
-        err = nbExecuteTreeConstruction(st);
+        // err = nbExecuteTreeConstruction(st);
         if (err != CL_SUCCESS)
             return err;
 
@@ -2252,14 +2246,23 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     cl_int err;
     cl_uint i;
     cl_command_queue q = st->ci->queue;
+    NBodyBuffers* nbb = st->nbb;
 
     st->dirty = TRUE;
     
     //Write Buffer:
     int buffSize = st->effNBody + st->tree.cellUsed;
+    printf("BUFFER SIZE: %d<<<<<\n", buffSize);
+    cl_mem* input = mwCalloc(1, sizeof(cl_mem));
+    cl_mem* output = mwCalloc(2, sizeof(cl_mem));
+    *input = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree) );
+    *output = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree) );
+    if(!nbb->input || !nbb->output){
+        return MW_CL_ERROR;
+    }
 
     err = clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->input,
+                        *input,
                         CL_TRUE,
                         0, buffSize*sizeof(gpuTree), gTreeIn,
                         0, NULL, NULL);
@@ -2277,7 +2280,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     
     //Read buffer from GPU
     err = clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->output,
+                        *output,
                         CL_TRUE,
                         0, buffSize*sizeof(gpuTree), gTreeOut,
                         0, NULL, NULL);
