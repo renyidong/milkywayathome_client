@@ -2043,7 +2043,7 @@ static cl_int nbPrintQuadMomentDifferences(const NBodyCtx* ctx, NBodyState* st)
     const real threshold = 1.0e-6;
   #endif
 
-    err = nbEnqueueReadRootQuadMoment(st, &quad);
+    // err = nbEnqueueReadRootQuadMoment(st, &quad);
     err |= nbMarshalBodies(st, CL_FALSE);
     if (err != CL_SUCCESS)
         return err;
@@ -2188,7 +2188,7 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
     {
         cl_int err;
 
-        err = nbExecuteTreeConstruction(st);
+        // err = nbExecuteTreeConstruction(st);
         if (err != CL_SUCCESS)
             return err;
 
