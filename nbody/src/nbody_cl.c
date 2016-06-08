@@ -402,70 +402,12 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int zeroVal = 0;
     if (!exact)
     {
-        // err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
-        // err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
-        // err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
-
-        // err |= clSetKernelArg(kern, 9, sizeof(cl_mem), &nbb->mass);
-
-        // err |= clSetKernelArg(kern, 10, sizeof(cl_mem), &nbb->next);
-        // err |= clSetKernelArg(kern, 11, sizeof(cl_mem), &nbb->more);
-        
-//         err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->start);
-//         err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->count);
-//         err |= clSetKernelArg(kern, 18, sizeof(cl_mem), &nbb->child);
-//         err |= clSetKernelArg(kern, 19, sizeof(cl_mem), &nbb->sort);
-//         err |= clSetKernelArg(kern, 20, sizeof(cl_mem), nbb->critRadii ? &nbb->critRadii : &nbb->dummy[0]);
-
-
-        // if (nbb->quad.xx) /* If we're using quadrupole moments */
-        // {
-        //     // err |= clSetKernelArg(kern, 12, sizeof(cl_mem), &nbb->quad.xx);
-        //     // err |= clSetKernelArg(kern, 13, sizeof(cl_mem), &nbb->quad.xy);
-        //     // err |= clSetKernelArg(kern, 14, sizeof(cl_mem), &nbb->quad.xz);
-
-        //     // err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->quad.yy);
-        //     // err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->quad.yz);
-
-        //     // err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->quad.zz);
-        // }
-        // else
-        // {
-        //     // err |= clSetKernelArg(kern, 12, sizeof(cl_mem), &nbb->dummy[1]);
-        //     // err |= clSetKernelArg(kern, 13, sizeof(cl_mem), &nbb->dummy[2]);
-        //     // err |= clSetKernelArg(kern, 14, sizeof(cl_mem), &nbb->dummy[3]);
-
-        //     // err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->dummy[4]);
-        //     // err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->dummy[5]);
-
-        //     // err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->dummy[6]);
-        // }
-//         err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->treeStatus);
-//         err |= clSetKernelArg(kern, 28, sizeof(cl_int), &zeroVal);
-//         err |= clSetKernelArg(kern, 29, sizeof(cl_int), &zeroVal);
         
     }
     else
     {
-        cl_int i;
-
-        // err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
-        // err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
-        // err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
-
-        // err |= clSetKernelArg(kern, 9, sizeof(cl_mem), &nbb->mass);
-        
-        // err |= clSetKernelArg(kern, 10, sizeof(cl_mem), &nbb->next);
-        // err |= clSetKernelArg(kern, 11, sizeof(cl_mem), &nbb->more);
-
-        for (i = 12; i < 18; ++i)
-        {
-            // err |= clSetKernelArg(kern, i, sizeof(cl_mem), &nbb->dummy[i - 10]);
-        }
-// 
-//         err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->treeStatus);
-//         err |= clSetKernelArg(kern, 28, sizeof(cl_int), &zeroVal);
-//         err |= clSetKernelArg(kern, 29, sizeof(cl_int), &zeroVal);
+      err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+      err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
     }
 
     return err;
@@ -493,7 +435,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
     else
     {
         //TESTING: Return to forceCalculation_Exact:
-        //err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
+        err |= nbSetKernelArguments(k->forceCalculationExact, st->nbb, exact);
         //err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
 
@@ -1443,9 +1385,9 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     //Determine which kernel to use:
     if (st->usesExact)
     {
-        forceKern = kernels->forceCalculation;
-        global[0] = ws->global[7];
-        local[0] = ws->local[7];
+        forceKern = kernels->forceCalculationExact;
+        global[0] = ws->global[5];
+        local[0] = ws->local[5];
     }
     else
     {
@@ -1736,53 +1678,57 @@ cl_int nbFindEffectiveNBody(const NBodyWorkSizes* workSizes, cl_bool exact, cl_i
 //NOTE: Works So Far
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
+    printf("CREATING BUFFERS\n");
     cl_uint i;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
     cl_int err;
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
-    int j;
+    int buffSize = st->effNBody + st->tree.cellUsed;
+    printf("Buffer Size: %d\n", buffSize);
+    st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
+    st->nbb->output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
     //const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
-    for (i = 0; i < 3; ++i)
-    {
-        // nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-        // nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
-        // nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
+    // for (i = 0; i < 3; ++i)
+    // {
+    //     // nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //     // nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
+    //     // nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
 
-        // if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
-        // {
-        //     return MW_CL_ERROR;
-        // }
-        /*if (ctx->criterion != Exact)
-        {
-            nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
-            nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
-            if (!nbb->min[i] || !nbb->max[i])
-            {
-                return MW_CL_ERROR;
-            }
-        }*/
+    //     // if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
+    //     // {
+    //     //     return MW_CL_ERROR;
+    //     // }
+    //     /*if (ctx->criterion != Exact)
+    //     {
+    //         nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
+    //         nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
+    //         if (!nbb->min[i] || !nbb->max[i])
+    //         {
+    //             return MW_CL_ERROR;
+    //         }
+    //     }*/
 
-        if (ctx->useQuad)
-        {
-            // nbb->quad.xx = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            // nbb->quad.xy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            // nbb->quad.xz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //     if (ctx->useQuad)
+    //     {
+    //         // nbb->quad.xx = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //         // nbb->quad.xy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //         // nbb->quad.xz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
 
-            // nbb->quad.yy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            // nbb->quad.yz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //         // nbb->quad.yy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //         // nbb->quad.yz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
 
-            // nbb->quad.zz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            // if (!nbb->quad.xx || !nbb->quad.xy || !nbb->quad.xz || !nbb->quad.yy || !nbb->quad.yz || !nbb->quad.zz)
-            // {
-            //     return MW_CL_ERROR;
-            // }
+    //         // nbb->quad.zz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+    //         // if (!nbb->quad.xx || !nbb->quad.xy || !nbb->quad.xz || !nbb->quad.yy || !nbb->quad.yz || !nbb->quad.zz)
+    //         // {
+    //         //     return MW_CL_ERROR;
+    //         // }
 
-        }
-    }
+    //     }
+    // }
 
-    massSize = st->usesExact ? st->effNBody * sizeof(real) : (nNode + 1) * sizeof(real);
+    //massSize = st->usesExact ? st->effNBody * sizeof(real) : (nNode + 1) * sizeof(real);
     // nbb->mass = mwCreateZeroReadWriteBuffer(ci, massSize);
     // if (!nbb->mass)
     // {
@@ -2409,13 +2355,11 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     
     //Write Buffer:
     int buffSize = st->effNBody + st->tree.cellUsed;
-    cl_mem input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
-    cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
-
+    printf("Buffer Size: %d\n", buffSize);
     //TODO: Figure out why buffer isn't being used by GPU
     printf("DATA CHECK INITIAL: %f\n", gTreeIn[0].mass);
     err = clEnqueueWriteBuffer(st->ci->queue,
-                        input,
+                        st->nbb->input,
                         CL_TRUE,
                         0, buffSize*sizeof(gpuTree), gTreeIn,
                         0, NULL, NULL);
@@ -2423,11 +2367,6 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
         printf("%i, OH SHIT\n", err);
 
     //Set kernel arguments:
-    err = clSetKernelArg(st->kernels->forceCalculationExact, 0, sizeof(cl_mem), &input );
-    err = clSetKernelArg(st->kernels->forceCalculationExact, 1, sizeof(cl_mem), &output );
-    if(err != CL_SUCCESS)
-        printf("%i, OH SHIT\n", err);
-    
     err = nbExecuteForceKernels(st, CL_TRUE);
     if (err != CL_SUCCESS)
     {
@@ -2439,7 +2378,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     
     //Read buffer from GPU
     err = clEnqueueReadBuffer(st->ci->queue,
-                        output,
+                        st->nbb->output,
                         CL_TRUE,
                         0, buffSize*sizeof(gpuTree), gTreeOut,
                         0, NULL, NULL);
@@ -2453,8 +2392,8 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
 //         printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
 //         printf("---------------------------------------\n");
 //     }
-    clReleaseMemObject(input);
-    clReleaseMemObject(output);
+    clReleaseMemObject(st->nbb->input);
+    clReleaseMemObject(st->nbb->output);
     
     printf("BEGINNING STRIP\n");
     nbStripBodies(st, gTreeOut);
@@ -2535,11 +2474,6 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     mwvector a = Pos(b);
     printf(">>>>> %f  <<<<< \n", a.x);
     
-    //Create Host Tree:
-    NBodyStatus rc = nbMakeTree(ctx, st);
-    if (nbStatusIsFatal(rc))
-        return rc;
-
     //Create Buffer:
     int n = (st->effNBody + st->tree.cellUsed);
     gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));
