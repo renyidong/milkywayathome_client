@@ -429,7 +429,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 //         err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->sort, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->quadMoments, st->nbb, exact);
-//        err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
+      err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
     else
@@ -467,6 +467,7 @@ cl_int nbReleaseKernels(NBodyState* st)
 //     err |= clReleaseKernel_quiet(kernels->quadMoments);
 //     err |= clReleaseKernel_quiet(kernels->sort);
      err |= clReleaseKernel_quiet(kernels->forceCalculation);
+     err |= clReleaseKernel_quiet(kernels->forceCalculationExact);
 //     err |= clReleaseKernel_quiet(kernels->integration);
 
     if (err != CL_SUCCESS)
@@ -1584,30 +1585,8 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
         return CL_SUCCESS;
     }
 
-    for (i = 0; i < 3; ++i)
-    {
-        // err |= clReleaseMemObject_quiet(nbb->pos[i]);
-        // err |= clReleaseMemObject_quiet(nbb->vel[i]);
-        // err |= clReleaseMemObject_quiet(nbb->acc[i]);
-    }
-
-    // err |= clReleaseMemObject_quiet(nbb->mass);
-    // err |= clReleaseMemObject_quiet(nbb->next);
-    // err |= clReleaseMemObject_quiet(nbb->more);
-    
-    // err |= clReleaseMemObject_quiet(nbb->quad.xx);
-    // err |= clReleaseMemObject_quiet(nbb->quad.xy);
-    // err |= clReleaseMemObject_quiet(nbb->quad.xz);
-
-    // err |= clReleaseMemObject_quiet(nbb->quad.yy);
-    // err |= clReleaseMemObject_quiet(nbb->quad.yz);
-
-    // err |= clReleaseMemObject_quiet(nbb->quad.zz);
-
-//     for (j = 0; j < nDummy; ++j)
-//     {
-//         err |= clReleaseMemObject_quiet(nbb->dummy[j]);
-//     }
+    err |= clReleaseMemObject_quiet(nbb->input);
+    err |= clReleaseMemObject_quiet(nbb->output);
 
     if (err != CL_SUCCESS)
     {
@@ -2392,8 +2371,6 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
 //         printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
 //         printf("---------------------------------------\n");
 //     }
-    clReleaseMemObject(st->nbb->input);
-    clReleaseMemObject(st->nbb->output);
     
     printf("BEGINNING STRIP\n");
     nbStripBodies(st, gTreeOut);
@@ -2414,40 +2391,7 @@ NBodyStatus nbRunSystemCLBarnesHut(const NBodyCtx* ctx, NBodyState* st, gpuTree*
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
-    
-    //Need to write to the buffer in this function
-    
-    ++st->step;
-    cl_int err;
-    cl_uint i;
-    
-    NBodyWorkSizes* ws = st->workSizes;
-
-    st->dirty = TRUE;
-    
-    memset(ws->timings, 0, sizeof(ws->timings));
-    
-    gpuTree gTreeIn; //GPU tree to be filled from host data
-    gpuTree gTreeOut; //GPU Tree to be filled from returned GPU data
-    fillGPUTree(ctx, st, &gTreeIn); //Fill GPU Tree headed to the GP
-    
-    
-    
-    err = nbExecuteForceKernels(st, CL_TRUE);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error executing force kernels");
-        return NBODY_CL_ERROR;
-    }
-// 
-//     for (i = 0; i < 7; ++i) /* Add timings to running totals */
-//     {
-//         ws->kernelTimings[i] += ws->timings[i];
-//     }
-// 
-//     nbReportProgressWithTimings(ctx, st);
-//     nbUpdateDisplayedBodies(ctx, st);
-// 
+    //THIS FUNCTION IS tO RUN ONLY ONE STEP OF THE OCL FUNCTION
     return NBODY_SUCCESS;
 }
 

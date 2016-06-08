@@ -13,7 +13,7 @@ dwarfMass        = tonumber(arg[5])
 light_mass_ratio = tonumber(arg[6])
 
 
-model1Bodies = 20
+model1Bodies = 20000
 totalBodies = model1Bodies
 
 nbodyLikelihoodMethod = "EMD"
