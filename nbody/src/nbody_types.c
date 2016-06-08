@@ -318,25 +318,25 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
     if (nbLoadKernels(ctx, st))
         return NBODY_CL_ERROR;
 
-    err = nbCreateBuffers(ctx, st);
-    if (err != CL_SUCCESS)
-        return NBODY_CL_ERROR;
+    // err = nbCreateBuffers(ctx, st);
+    // if (err != CL_SUCCESS)
+    //     return NBODY_CL_ERROR;
 
     //Commented out to fix broken initialization, don't need anymore because tree status not on GPU
     //err = nbSetInitialTreeStatus(st);
     //if (err != CL_SUCCESS)
     //    return NBODY_CL_ERROR;
 
-    err = nbSetAllKernelArguments(st);
-    if (err != CL_SUCCESS)
-        return NBODY_CL_ERROR;
+    // err = nbSetAllKernelArguments(st);
+    // if (err != CL_SUCCESS)
+    //     return NBODY_CL_ERROR;
 
-    err = nbMarshalBodies(st, CL_TRUE);
-    if (err != CL_SUCCESS)
-    {
-        mw_printf("Error marshalling initial bodies\n");
-        return NBODY_CL_ERROR;
-    }
+    // err = nbMarshalBodies(st, CL_TRUE);
+    // if (err != CL_SUCCESS)
+    // {
+    //     mw_printf("Error marshalling initial bodies\n");
+    //     return NBODY_CL_ERROR;
+    // }
     return NBODY_SUCCESS;
 }
 

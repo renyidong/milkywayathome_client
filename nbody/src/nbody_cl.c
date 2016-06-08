@@ -402,14 +402,14 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int zeroVal = 0;
     if (!exact)
     {
-        err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
-        err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
-        err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
+        // err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
+        // err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
+        // err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
 
-        err |= clSetKernelArg(kern, 9, sizeof(cl_mem), &nbb->mass);
+        // err |= clSetKernelArg(kern, 9, sizeof(cl_mem), &nbb->mass);
 
-        err |= clSetKernelArg(kern, 10, sizeof(cl_mem), &nbb->next);
-        err |= clSetKernelArg(kern, 11, sizeof(cl_mem), &nbb->more);
+        // err |= clSetKernelArg(kern, 10, sizeof(cl_mem), &nbb->next);
+        // err |= clSetKernelArg(kern, 11, sizeof(cl_mem), &nbb->more);
         
 //         err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->start);
 //         err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->count);
@@ -418,28 +418,28 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
 //         err |= clSetKernelArg(kern, 20, sizeof(cl_mem), nbb->critRadii ? &nbb->critRadii : &nbb->dummy[0]);
 
 
-        if (nbb->quad.xx) /* If we're using quadrupole moments */
-        {
-            err |= clSetKernelArg(kern, 12, sizeof(cl_mem), &nbb->quad.xx);
-            err |= clSetKernelArg(kern, 13, sizeof(cl_mem), &nbb->quad.xy);
-            err |= clSetKernelArg(kern, 14, sizeof(cl_mem), &nbb->quad.xz);
+        // if (nbb->quad.xx) /* If we're using quadrupole moments */
+        // {
+        //     // err |= clSetKernelArg(kern, 12, sizeof(cl_mem), &nbb->quad.xx);
+        //     // err |= clSetKernelArg(kern, 13, sizeof(cl_mem), &nbb->quad.xy);
+        //     // err |= clSetKernelArg(kern, 14, sizeof(cl_mem), &nbb->quad.xz);
 
-            err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->quad.yy);
-            err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->quad.yz);
+        //     // err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->quad.yy);
+        //     // err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->quad.yz);
 
-            err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->quad.zz);
-        }
-        else
-        {
-            err |= clSetKernelArg(kern, 12, sizeof(cl_mem), &nbb->dummy[1]);
-            err |= clSetKernelArg(kern, 13, sizeof(cl_mem), &nbb->dummy[2]);
-            err |= clSetKernelArg(kern, 14, sizeof(cl_mem), &nbb->dummy[3]);
+        //     // err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->quad.zz);
+        // }
+        // else
+        // {
+        //     // err |= clSetKernelArg(kern, 12, sizeof(cl_mem), &nbb->dummy[1]);
+        //     // err |= clSetKernelArg(kern, 13, sizeof(cl_mem), &nbb->dummy[2]);
+        //     // err |= clSetKernelArg(kern, 14, sizeof(cl_mem), &nbb->dummy[3]);
 
-            err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->dummy[4]);
-            err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->dummy[5]);
+        //     // err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->dummy[4]);
+        //     // err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->dummy[5]);
 
-            err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->dummy[6]);
-        }
+        //     // err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->dummy[6]);
+        // }
 //         err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->treeStatus);
 //         err |= clSetKernelArg(kern, 28, sizeof(cl_int), &zeroVal);
 //         err |= clSetKernelArg(kern, 29, sizeof(cl_int), &zeroVal);
@@ -449,18 +449,18 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     {
         cl_int i;
 
-        err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
-        err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
-        err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
+        // err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
+        // err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
+        // err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
 
-        err |= clSetKernelArg(kern, 9, sizeof(cl_mem), &nbb->mass);
+        // err |= clSetKernelArg(kern, 9, sizeof(cl_mem), &nbb->mass);
         
-        err |= clSetKernelArg(kern, 10, sizeof(cl_mem), &nbb->next);
-        err |= clSetKernelArg(kern, 11, sizeof(cl_mem), &nbb->more);
+        // err |= clSetKernelArg(kern, 10, sizeof(cl_mem), &nbb->next);
+        // err |= clSetKernelArg(kern, 11, sizeof(cl_mem), &nbb->more);
 
         for (i = 12; i < 18; ++i)
         {
-            err |= clSetKernelArg(kern, i, sizeof(cl_mem), &nbb->dummy[i - 10]);
+            // err |= clSetKernelArg(kern, i, sizeof(cl_mem), &nbb->dummy[i - 10]);
         }
 // 
 //         err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->treeStatus);
@@ -1644,23 +1644,23 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
 
     for (i = 0; i < 3; ++i)
     {
-        err |= clReleaseMemObject_quiet(nbb->pos[i]);
-        err |= clReleaseMemObject_quiet(nbb->vel[i]);
-        err |= clReleaseMemObject_quiet(nbb->acc[i]);
+        // err |= clReleaseMemObject_quiet(nbb->pos[i]);
+        // err |= clReleaseMemObject_quiet(nbb->vel[i]);
+        // err |= clReleaseMemObject_quiet(nbb->acc[i]);
     }
 
-    err |= clReleaseMemObject_quiet(nbb->mass);
-    err |= clReleaseMemObject_quiet(nbb->next);
-    err |= clReleaseMemObject_quiet(nbb->more);
+    // err |= clReleaseMemObject_quiet(nbb->mass);
+    // err |= clReleaseMemObject_quiet(nbb->next);
+    // err |= clReleaseMemObject_quiet(nbb->more);
     
-    err |= clReleaseMemObject_quiet(nbb->quad.xx);
-    err |= clReleaseMemObject_quiet(nbb->quad.xy);
-    err |= clReleaseMemObject_quiet(nbb->quad.xz);
+    // err |= clReleaseMemObject_quiet(nbb->quad.xx);
+    // err |= clReleaseMemObject_quiet(nbb->quad.xy);
+    // err |= clReleaseMemObject_quiet(nbb->quad.xz);
 
-    err |= clReleaseMemObject_quiet(nbb->quad.yy);
-    err |= clReleaseMemObject_quiet(nbb->quad.yz);
+    // err |= clReleaseMemObject_quiet(nbb->quad.yy);
+    // err |= clReleaseMemObject_quiet(nbb->quad.yz);
 
-    err |= clReleaseMemObject_quiet(nbb->quad.zz);
+    // err |= clReleaseMemObject_quiet(nbb->quad.zz);
 
 //     for (j = 0; j < nDummy; ++j)
 //     {
@@ -1746,14 +1746,14 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     //const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
     for (i = 0; i < 3; ++i)
     {
-        nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-        nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
-        nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
+        // nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+        // nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
+        // nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
 
-        if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
-        {
-            return MW_CL_ERROR;
-        }
+        // if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
+        // {
+        //     return MW_CL_ERROR;
+        // }
         /*if (ctx->criterion != Exact)
         {
             nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
@@ -1766,28 +1766,28 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 
         if (ctx->useQuad)
         {
-            nbb->quad.xx = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            nbb->quad.xy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            nbb->quad.xz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            // nbb->quad.xx = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            // nbb->quad.xy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            // nbb->quad.xz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
 
-            nbb->quad.yy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            nbb->quad.yz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            // nbb->quad.yy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            // nbb->quad.yz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
 
-            nbb->quad.zz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-            if (!nbb->quad.xx || !nbb->quad.xy || !nbb->quad.xz || !nbb->quad.yy || !nbb->quad.yz || !nbb->quad.zz)
-            {
-                return MW_CL_ERROR;
-            }
+            // nbb->quad.zz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            // if (!nbb->quad.xx || !nbb->quad.xy || !nbb->quad.xz || !nbb->quad.yy || !nbb->quad.yz || !nbb->quad.zz)
+            // {
+            //     return MW_CL_ERROR;
+            // }
 
         }
     }
 
     massSize = st->usesExact ? st->effNBody * sizeof(real) : (nNode + 1) * sizeof(real);
-    nbb->mass = mwCreateZeroReadWriteBuffer(ci, massSize);
-    if (!nbb->mass)
-    {
-        return MW_CL_ERROR;
-    }
+    // nbb->mass = mwCreateZeroReadWriteBuffer(ci, massSize);
+    // if (!nbb->mass)
+    // {
+    //     return MW_CL_ERROR;
+    // }
 
     /*nbb->treeStatus = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
     if (!nbb->treeStatus)
@@ -1838,15 +1838,15 @@ static cl_int nbMapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers*
 
     for (i = 0; i < 3; ++i)
     {
-        pos[i] = (real*) mapBuffer(ci, nbb->pos[i], flags, st->nbody * sizeof(real));
-        vel[i] = (real*) mapBuffer(ci, nbb->vel[i], flags, st->nbody * sizeof(real));
-        if (!pos[i] || !vel[i])
-        {
-            return MW_CL_ERROR;
-        }
+        // pos[i] = (real*) mapBuffer(ci, nbb->pos[i], flags, st->nbody * sizeof(real));
+        // vel[i] = (real*) mapBuffer(ci, nbb->vel[i], flags, st->nbody * sizeof(real));
+        // if (!pos[i] || !vel[i])
+        // {
+        //     return MW_CL_ERROR;
+        // }
     }
 
-    *mass = (real*) mapBuffer(ci, nbb->mass, flags, st->nbody * sizeof(real));
+    //*mass = (real*) mapBuffer(ci, nbb->mass, flags, st->nbody * sizeof(real));
 
     return CL_SUCCESS;
 }
@@ -1861,18 +1861,18 @@ static cl_int nbUnmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers
     {
         if (pos[i])
         {
-            err |= clEnqueueUnmapMemObject(ci->queue, nbb->pos[i], pos[i], 0, NULL, NULL);
+            //err |= clEnqueueUnmapMemObject(ci->queue, nbb->pos[i], pos[i], 0, NULL, NULL);
         }
 
         if (vel[i])
         {
-            err |= clEnqueueUnmapMemObject(ci->queue, nbb->vel[i], vel[i], 0, NULL, NULL);
+            // err |= clEnqueueUnmapMemObject(ci->queue, nbb->vel[i], vel[i], 0, NULL, NULL);
         }
     }
 
     if (mass)
     {
-        err |= clEnqueueUnmapMemObject(ci->queue, nbb->mass, mass, 0, NULL, NULL);
+        // err |= clEnqueueUnmapMemObject(ci->queue, nbb->mass, mass, 0, NULL, NULL);
     }
 
     return err;
@@ -2390,7 +2390,7 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
     }
 }
 
-NBodyStatus nbRunSystemCLBruteForce(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
+NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
 {
     
     //Need to write to the buffer in this function
@@ -2413,6 +2413,7 @@ NBodyStatus nbRunSystemCLBruteForce(const NBodyCtx* ctx, NBodyState* st, gpuTree
     cl_mem output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
 
     //TODO: Figure out why buffer isn't being used by GPU
+    printf("DATA CHECK INITIAL: %f\n", gTreeIn[0].mass);
     err = clEnqueueWriteBuffer(st->ci->queue,
                         input,
                         CL_TRUE,
@@ -2445,6 +2446,7 @@ NBodyStatus nbRunSystemCLBruteForce(const NBodyCtx* ctx, NBodyState* st, gpuTree
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
+    printf("DATA CHECK POST: %f\n", gTreeOut[0].mass);
 //     if(gTreeOut[10].isBody){
 //         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
 //         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
@@ -2553,7 +2555,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     ////////////////////
     
     //RUN BRUTE FORCE SYSTEM:
-    nbRunSystemCLBruteForce(ctx, st, gTreeIn, gTreeOut);
+    nbRunSystemCLExact(ctx, st, gTreeIn, gTreeOut);
     
     //RUN BARNES-HUT SYSTEM:
     nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
