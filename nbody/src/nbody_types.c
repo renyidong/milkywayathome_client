@@ -331,12 +331,12 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    // err = nbMarshalBodies(st, CL_TRUE);
-    // if (err != CL_SUCCESS)
-    // {
-    //     mw_printf("Error marshalling initial bodies\n");
-    //     return NBODY_CL_ERROR;
-    // }
+    err = nbMarshalBodies(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mw_printf("Error marshalling initial bodies\n");
+        return NBODY_CL_ERROR;
+    }
     return NBODY_SUCCESS;
 }
 

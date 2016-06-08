@@ -378,7 +378,6 @@ int nbMain(const NBodyFlags* nbf)
 
     ts = mwGetTime();
     //NOTE: This is where the system actually runs:
-    printf("Beginning system run\n");
     rc = nbRunSystem(ctx, st);
     te = mwGetTime();
 

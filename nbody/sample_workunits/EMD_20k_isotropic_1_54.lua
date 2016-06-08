@@ -64,7 +64,7 @@ function makeContext()
       timeEvolve = evolveTime,
       timestep   = get_timestep(),
       eps2       = calculateEps2(totalBodies, soften_length),
-      criterion  = "Exact",
+      criterion  = "NewCriterion",
       useQuad    = true,
       theta      = 1.0
    }

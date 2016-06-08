@@ -193,8 +193,25 @@ typedef struct MW_ALIGN_TYPE
 
 typedef struct
 {
-    cl_mem input;
-    cl_mem output;  
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
+
+    cl_mem mass;
+
+    cl_mem next; /* TODO: We can reuse other buffers with this later to save memory */
+    cl_mem more;
+
+    cl_mem isBody;
+    struct
+    {
+        cl_mem xx, xy, xz;
+        cl_mem yy, yz;
+        cl_mem zz;
+    } quad;
+    
+cl_mem dummy[18];
+    
    
 } NBodyBuffers;
 
