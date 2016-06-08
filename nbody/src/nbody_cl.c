@@ -1681,7 +1681,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
     cl_int err;
-    cl_uint buffSize = nbFindNNode(&ci->di, st->effNBody);
+    int buffSize = nbFindNNode(&ci->di, st->effNBody);
     printf("BUFFER SIZE: %f<<<<<\n", buffSize);
     nbb->input = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree) );
     nbb->output = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree) );
