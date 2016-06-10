@@ -402,12 +402,13 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int zeroVal = 0;
     if (!exact)
     {
-        
+        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );        
     }
     else
     {
-      err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
-      err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
+        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
     }
 
     return err;
@@ -1392,7 +1393,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     }
     else
     {
-        forceKern = kernels->forceCalculationExact;
+        forceKern = kernels->forceCalculation;
         global[0] = ws->global[5];
         local[0] = ws->local[5];
     }

@@ -1131,6 +1131,7 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
+  _gTreeOut[0].mass = 20;
 }
 // __kernel void bruteForceCalculationManager(GTPtr _gTreeIn, GTPtr _gTreeOut)
 // {
