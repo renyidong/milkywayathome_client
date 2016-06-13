@@ -27,13 +27,14 @@
  * computed all these functions are
  * calculated in log space*/
 
-static real factorial(int n){
+static real factorial(int n)
+{
      int counter;
-     real result = 0;
+     real result = 0.0;
 
      for (counter = n; counter >= 1; counter--)
        {
-          result += mw_log(counter);
+          result += mw_log((real) counter);
        }
 
      return result;
@@ -43,33 +44,38 @@ static real factorial(int n){
 static real choose(int n, int c)
 {
     unsigned int i;
-    real result = 0;
-
+    real result = 0.0;
+    
     /* This for loop calulates log(n!/(n-c)!) */
     for (i = n - c + 1; i <= (unsigned int) n; ++i)
     {
         result += mw_log(i);
     }
-
     result -= factorial(c);
     return result;
 }
 
-real probability_match(int n, int k, real pobs)
+real probability_match(int n, real ktmp, real pobs)
 {
-    real result = 0;
+    real result = 0.0;
 
-    //result +=  (real) mw_log(choose(n, k));                                                                                                                                                        
-    //result += mw_log(pobs) * (real) k;                                                                                                                                                             
-    //result += mw_log(1.0 - pobs) * (real)(n - k);                                                                                                                                                  
-
+    /*
+     * Previously, this function took in k as an int. Bad move.
+     * This function was called twice, one of which sent a real valued k: (int) k1 and (real) k2
+     * That real k2 was then converted to int. Could result in converted (int) k1 != (int) k2 when k1 = k2. 
+     * Special result was poor likelihood for some histograms when check against themselves!
+     * General results: unknown. But probably not good. (most likely caused different machines to report
+     * different likelihood values).
+     * 
+     */
+    int k = (int) mw_round(ktmp);    //patch. See above. 
     //The previous calculation does not return the right values.  Furthermore, we need a zeroed metric.                                                                                              
-    result = (real)  choose(n,k) + k * mw_log(pobs) + (n-k) * mw_log(1 - pobs);
-    //mw_printf("Coeff = %10.10f\n",choose(n,k));
-    //mw_printf("Term 1 = %10.10f\n",k * mw_log(pobs));
-    //mw_printf("Term 2 = %10.10f\n",(n-k) * mw_log(1 - pobs));
-
-    return(mw_pow(10,result));
+    result =  (real) choose(n, k);
+    result += k * mw_log(pobs); 
+    result += (n - k) * mw_log(1.0 - pobs);
+    
+    
+    return mw_exp(result);
 }
 
 

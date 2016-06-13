@@ -50,16 +50,16 @@ static real nbHistogramBetaBinSize(const HistogramParams* hp)
     return binSize;
 }
 
-double nbNormalizedHistogramError(unsigned int n, double total)
+real nbNormalizedHistogramError(unsigned int n, real total)
 {
-    return (n == 0) ? inv(total) : sqrt((double) n) / total;
+    return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;
 }
 
-double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
+real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
 {
     unsigned int i;
     unsigned int nBin = data->lambdaBins * data->betaBins;
-    double total = 0.0;
+    real total = 0.0;
 
     for (i = 0; i < nBin; ++i)
     {
@@ -265,7 +265,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 
     mw_boinc_print(f, "<histogram>\n");
     fprintf(f, "n = %u\n", histogram->totalNum);
-    fprintf(f, "massPerParticle = %12.10f\n", histogram->massPerParticle);
+    fprintf(f, "massPerParticle = %12.15f\n", histogram->massPerParticle);
     fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
     fprintf(f, "betaBins = %u\n", histogram->betaBins);
@@ -274,7 +274,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.10f %12.10f %12.10f %12.10f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
@@ -323,18 +323,18 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     unsigned int i;
     unsigned int j;
     unsigned int Histindex;
-    double count;
+    real count;
 
     const HistogramParams* hp = &histogram->params;
 
     unsigned int lambdaBins = histogram->lambdaBins;
     unsigned int betaBins = histogram->betaBins;
-    double lambdaSize = nbHistogramLambdaBinSize(hp);
-    double betaSize = nbHistogramBetaBinSize(hp);
-    double lambdaStart = hp->lambdaStart;
-    double betaStart = hp->betaStart;
+    real lambdaSize = nbHistogramLambdaBinSize(hp);
+    real betaSize = nbHistogramBetaBinSize(hp);
+    real lambdaStart = hp->lambdaStart;
+    real betaStart = hp->betaStart;
 
-    double totalNum = (double) histogram->totalNum;
+    real totalNum = (real) histogram->totalNum;
     HistData* histData = histogram->data;
 
 
@@ -343,11 +343,11 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
         for(j = 0; j < betaBins; ++j)
         {
             Histindex = i * betaBins + j;
-            count = (double) histData[Histindex].rawCount;
+            count = (real) histData[Histindex].rawCount;
             
             /* Report center of the bins */
-            histData[Histindex].lambda = ((double) i + 0.5) * lambdaSize + lambdaStart;
-            histData[Histindex].beta = ((double) j + 0.5) * betaSize + betaStart;
+            histData[Histindex].lambda = ((real) i + 0.5) * lambdaSize + lambdaStart;
+            histData[Histindex].beta = ((real) j + 0.5) * betaSize + betaStart;
             histData[Histindex].count = count / totalNum;
             histData[Histindex].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
         }
@@ -367,8 +367,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                                   const NBodyState* st,       /* Final state of the simulation */
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
-    double lambda;
-    double beta;
+    real lambda;
+    real beta;
     mwvector lambdaBetaR;
     unsigned int lambdaIndex;
     unsigned int betaIndex;
@@ -379,20 +379,19 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
-    double lambdaSize = nbHistogramLambdaBinSize(hp);
-    double betaSize = nbHistogramBetaBinSize(hp);
+    real lambdaSize = nbHistogramLambdaBinSize(hp);
+    real betaSize = nbHistogramBetaBinSize(hp);
     /* Calculate the bounds of the bin range, making sure to use a
      * fixed bin size which spans the entire range, and is symmetric
      * around 0 */
 
-    double lambdaStart = hp->lambdaStart;
-    double betaStart = hp->betaStart;
+    real lambdaStart = hp->lambdaStart;
+    real betaStart = hp->betaStart;
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
     unsigned int nBin = lambdaBins * betaBins;
-    
-    double Nbodies= st->nbody;
-    mwbool isdark = TRUE;//is it dark matter?
+    unsigned int body_count = 0;
+    real Nbodies= st->nbody;
     mwbool islight = FALSE;//is it light matter?
     
     nbGetHistTrig(&histTrig, hp);
@@ -402,22 +401,22 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->betaBins = betaBins;
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
-    histogram->totalSimulated = (unsigned int) st->nbody;
     
     for (int i = 0; i < Nbodies; i++)
     {
         const Body* b = &st->bodytab[i];
-	if(Type(b)==BODY(islight))
-	{
-	  histogram->massPerParticle=Mass(b);
-	  break;
-	}
+        if(Type(b) == BODY(islight))
+        {
+            histogram->massPerParticle = Mass(b);
+            body_count++;
+        }
     }
+    histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
-
     /* It does not make sense to ignore bins in a generated histogram */
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
+        histData[Histindex].rawCount = 0;
         histData[Histindex].useBin = TRUE;
     }
 
@@ -434,8 +433,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             beta = B(lambdaBetaR);
 
             /* Find the indices */
-            lambdaIndex = (unsigned int) floor((lambda - lambdaStart) / lambdaSize);
-            betaIndex = (unsigned int) floor((beta - betaStart) / betaSize);
+            lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
+            betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
 
             /* Check if the position is within the bounds of the histogram */
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
@@ -479,7 +478,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    double mass = 0;            /*mass per particle read from the histogram */
+    real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
     f = mwOpenResolved(histogramFile, "r");
@@ -536,7 +535,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
         if (!readParams)  /* One line is allowed for information on the histogram */
         {
-            double phi, theta, psi;
+            real phi, theta, psi;
 
             rc = sscanf(lineBuf,
                         " phi = %lf , theta = %lf , psi = %lf \n",

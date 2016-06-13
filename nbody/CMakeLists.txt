@@ -46,7 +46,7 @@ if(NBODY_GL)
   include_directories(${GLM_INCLUDE_DIR})
 endif()
 
-cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
+cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
                                       "NOT NBODY_OPENCL;NOT ENABLE_CURSES" OFF)
 mark_as_advanced(NBODY_STATIC)
 maybe_static(${NBODY_STATIC})
@@ -123,7 +123,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody.c
                   ${NBODY_SRC_DIR}/nbody_plain.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
-		              ${NBODY_SRC_DIR}/nbody_isotropic.c
+                  ${NBODY_SRC_DIR}/nbody_isotropic.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_nfw.c
                   ${NBODY_SRC_DIR}/nbody_hernq.c
@@ -149,7 +149,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
-		                  ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
+                      ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
                       ${NBODY_INCLUDE_DIR}/nbody_hernq.h
@@ -439,7 +439,7 @@ if(BOINC_RELEASE_NAMES)
   get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
   set_target_properties(milkyway_nbody
                           PROPERTIES
-						    OUTPUT_NAME ${BOINC_BIN_NAME})
+                OUTPUT_NAME ${BOINC_BIN_NAME})
 
   if(NBODY_GL)
     get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")

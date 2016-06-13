@@ -253,6 +253,12 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             POPT_ARG_NONE, &nbf.outputCartesian,
             0, "Output Cartesian coordinates instead of lbR", NULL
         },
+        
+        {
+            "output-lbrcartesian", 'b',
+            POPT_ARG_NONE, &nbf.outputlbrCartesian,
+            0, "Output both lbr and Cartesian coordinates", NULL
+        },
 
         {
             "timing", 't',
@@ -571,7 +577,6 @@ int main(int argc, const char* argv[])
     NBodyFlags nbf;
     int rc = 0;
     const char** argvCopy = mwFixArgv(argc, argv);
-
     nbSpecialSetup();
 
     if (nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf))
@@ -608,10 +613,10 @@ int main(int argc, const char* argv[])
     }
     else if (nbf.matchHistogram)
     {
-        double emd;
+        real emd;
 
         emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram);
-        mw_printf("%.15f\n", emd);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
     }
     else

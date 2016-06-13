@@ -211,7 +211,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 {
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
-    double likelihood = NAN;
+    real likelihood = NAN;
     NBodyLikelihoodMethod method;
 
     /* The likelihood only means something when matching a histogram */
@@ -270,19 +270,19 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
           infinities (not errors) to be the worst case.  The worst case is now the actual
           worst thing that can happen.
         */
-	/*
-	 * It previous returned the worse case when the likelihood==0. 
-	 * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
-	 */
-        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1*DEFAULT_WORST_CASE) )
+        /*
+        * It previous returned the worse case when the likelihood == 0. 
+        * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
+        */
+        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1 * DEFAULT_WORST_CASE) )
         {
             mw_printf("Poor likelihood.  Returning worst case.\n");
             likelihood = DEFAULT_WORST_CASE;
         }
         else if(likelihood == 0.0)
-	{
-	  likelihood=DEFAULT_BEST_CASE;
-	}
+        {
+            likelihood = DEFAULT_BEST_CASE;
+        }
     }
 
     free(histogram);
@@ -315,7 +315,7 @@ int nbMain(const NBodyFlags* nbf)
     CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
-    double ts = 0.0, te = 0.0;
+    real ts = 0.0, te = 0.0;
 
     if (!nbOutputIsUseful(nbf))
     {
