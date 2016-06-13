@@ -1196,7 +1196,6 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
         //_gTreeOut[0].pos[0] = _gTreeOut[0].acc[0];
         //Finally, after finding the total acceleration, we can integrate it:
         //Integrate the acceleration by the timestep and get the values for velocity and position:
-        
         real px = _gTreeIn[a].pos[0];
         real py = _gTreeIn[a].pos[1];
         real pz = _gTreeIn[a].pos[2];
@@ -1236,14 +1235,58 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
         
         _gTreeOut[a].vel[0] = vx;
         _gTreeOut[a].vel[1] = vy;
-        _gTreeOut[a].vel[2] = vz;
+        _gTreeOut[a].vel[2] = vz; 
+        
     }
     
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 //=========================================
 }
     
+  
+//////////////////////////////////////
+//EXPERIMENTAL BRUTE FORCE KERNEL:
+/////////////////////////////////////
+/*__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
+__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
+{
+  
+  int a = (int)get_global_id(0);
+//     if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
+//         _gTreeOut = _gTreeIn;
+//     }
+  _gTreeOut[a].mass = _gTreeIn[a].mass;
+  _gTreeOut[a].isBody = _gTreeIn[a].isBody;
+  
+  real pos1[3];
+  real pos2[3];
+  real drVec[3];
+
+  for(int i = 0; i < 3; ++i){
+    _gTreeOut[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
+    pos1[i] = _gTreeIn[a].pos[i];
+  }
+  for(int j = a; j < EFFNBODY; ++j){
+    for(int i = 0; i < 3; ++i){
+      pos2[i] = _gTreeIn[j].pos[i];
+      drVec[i] = (pos2[i] - pos1[i]);
+    }
+    real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], drVec[2] * drVec[2])) + EPS2;
+    real dr = sqrt(dr2);
     
+    //Calculate acceleration between the two bodies:
+//                     _gTreeOut[a].acc[0] += 10;
+//                     _gTreeOut[a].acc[1] += 10;
+//                     _gTreeOut[a].acc[2] += 10;
+    _gTreeOut[a].acc[0] += (_gTreeIn[j].mass * drVec[0])/(dr2*dr);
+    _gTreeOut[a].acc[1] += (_gTreeIn[j].mass * drVec[1])/(dr2*dr);
+    _gTreeOut[a].acc[2] += (_gTreeIn[j].mass * drVec[2])/(dr2*dr);
+  }
+
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+}*/
+//////////////////////////////////////////////////
+
     
     
 
@@ -1581,8 +1624,51 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
 //}
 
 __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void NBODY_KERNEL(integration)
+__kernel void integration(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
+
+
+  int a = get_global_id(0);
+  real px = _gTreeIn[a].pos[0];
+  real py = _gTreeIn[a].pos[1];
+  real pz = _gTreeIn[a].pos[2];
+  
+  real vx = _gTreeIn[a].vel[0];
+  real vy = _gTreeIn[a].vel[1];
+  real vz = _gTreeIn[a].vel[2];
+
+//         real vx = 1;
+//         real vy = 1;
+//         real vz = 1;
+
+  
+  real ax = _gTreeOut[a].acc[0];
+  real ay = _gTreeOut[a].acc[1];
+  real az = _gTreeOut[a].acc[2];
+  
+  real dvx = 0.5 * TIMESTEP * _gTreeOut[a].acc[0];
+  real dvy = 0.5 * TIMESTEP * _gTreeOut[a].acc[1];
+  real dvz = 0.5 * TIMESTEP * _gTreeOut[a].acc[2];
+  
+  vx += dvx;
+  vy += dvy;
+  vz += dvz;
+  
+  _gTreeOut[a].pos[0] = mad(TIMESTEP, vx, _gTreeIn[a].pos[0]);
+  _gTreeOut[a].pos[1] = mad(TIMESTEP, vy, _gTreeIn[a].pos[1]);
+  _gTreeOut[a].pos[2] = mad(TIMESTEP, vz, _gTreeIn[a].pos[2]);
+  
+//         _gTreeOut[a].pos[0] = _gTreeIn[a].pos[0];
+//         _gTreeOut[a].pos[1] = _gTreeIn[a].pos[1];
+//         _gTreeOut[a].pos[2] = _gTreeIn[a].pos[2];
+//         
+  vx += dvx;
+  vy += dvy;
+  vz += dvz;
+  
+  _gTreeOut[a].vel[0] = vx;
+  _gTreeOut[a].vel[1] = vy;
+  _gTreeOut[a].vel[2] = vz;
 //     uint inc = get_local_size(0) * get_num_groups(0);
 // 
 //     /* Iterate over all bodies assigned to thread */
