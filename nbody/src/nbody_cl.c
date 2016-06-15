@@ -2132,25 +2132,6 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
     return CL_SUCCESS;
 }
-void fillGPUTreeBodies(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
-  for(int i = 0; i < st->nbody; ++i){
-    mwvector pos, vel;
-    Body b = st->bodytab[i];
-    pos = b.bodynode.pos;
-    gpT[i].pos[0] = pos.x;
-    gpT[i].pos[1] = pos.y;
-    gpT[i].pos[2] = pos.z;
-
-    gpT[i].mass = st->bodytab[i].bodynode.mass;
-
-    vel = b.vel;
-    gpT[i].vel[0] = vel.x;
-    gpT[i].vel[1] = vel.y;
-    gpT[i].vel[2] = vel.z;
-
-    gpT[i].isBody = 1;
-  }
-}
 void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
     //Create gpu tree array:
     //Fill TreeArray:
@@ -2365,16 +2346,13 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
         printf("%i, OH SHIT\n", err);
 
     //Set kernel arguments:
-      int k = 0;
-    while (st->step < ctx->nStep){
-      ++st->step;
-      printf("BEGINNING STEP: %d/%d\n", st->step, ctx->nStep);
-      err = nbExecuteForceKernels(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing force kernels");
-          return NBODY_CL_ERROR;
-      }
+    for(int n = 0; n < ctx->nStep; ++n){
+        err = nbExecuteForceKernels(st, CL_TRUE);
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error executing force kernels");
+            return NBODY_CL_ERROR;
+        }
     }
   
     

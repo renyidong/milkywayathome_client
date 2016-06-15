@@ -1238,7 +1238,13 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
         _gTreeOut[a].vel[2] = vz; 
         
     }
-    
+    //Copy Output data to input:
+    for(int i = 0; i < 3; ++i){
+      _gTreeIn[a].pos[i] = _gTreeOut[a].pos[i];
+      _gTreeIn[a].vel[i] = _gTreeOut[a].vel[i];
+    }
+    _gTreeIn[a].mass = _gTreeOut[a].mass;
+    _gTreeIn[a].isBody = _gTreeOut[a].isBody;
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 //=========================================
 }
