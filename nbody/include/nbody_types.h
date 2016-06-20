@@ -257,7 +257,7 @@ typedef struct
 //     cl_kernel sort;
 //     cl_kernel quadMoments;
     cl_kernel forceCalculation;
-//     cl_kernel integration;
+    cl_kernel integration;
     
     cl_kernel testAddition;
 

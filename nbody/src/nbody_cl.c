@@ -661,7 +661,7 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 //     kernels->quadMoments = mwCreateKernel(program, "quadMoments");
 //     kernels->sort = mwCreateKernel(program, "sort");
     kernels->forceCalculation = mwCreateKernel(program, "forceCalculation");
-//     kernels->integration = mwCreateKernel(program, "integration");
+    //kernels->integration = mwCreateKernel(program, "integration");
     kernels->forceCalculationExact = mwCreateKernel(program, "forceCalculationExact");
 //     kernels->testAddition = mwCreateKernel(program, "testAddition");
     return(     kernels->forceCalculation
@@ -1420,6 +1420,13 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (err != CL_SUCCESS)
         return err;
 
+    // if(st->usesExact){
+    //       err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
+    //                                    0, global, local,
+    //                                    0, NULL, &integrateEv);
+    //       if (err != CL_SUCCESS)
+    //           return err;
+    //     }
     //ws->timings[5] += waitReleaseEventWithTime(ev);
     
     
@@ -1667,8 +1674,10 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
     int buffSize = st->effNBody + st->tree.cellUsed;
     printf("Buffer Size: %d\n", buffSize);
-    st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
-    st->nbb->output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
+    // st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
+    // st->nbb->output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
+    st->nbb->input = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree));
+    st->nbb->output = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree));
     //const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
     // for (i = 0; i < 3; ++i)
     // {
@@ -2400,16 +2409,19 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     int n = (st->effNBody + st->tree.cellUsed);
     int j = 0;
     for(int i = 0; i < n; ++i){
-        if(gpuData[n].isBody){
-            st->bodytab[j].bodynode.pos.x = gpuData[n].pos[0];
-            st->bodytab[j].bodynode.pos.y = gpuData[n].pos[1];
-            st->bodytab[j].bodynode.pos.z = gpuData[n].pos[2];
-            st->bodytab[j].bodynode.mass = gpuData[n].mass;
-            st->bodytab[j].vel.x = gpuData[n].vel[0];
-            st->bodytab[j].vel.y = gpuData[n].vel[1];
-            st->bodytab[j].vel.z = gpuData[n].vel[2];
+        if(gpuData[i].isBody == 1){
+          printf("BODY Position: %f \n", gpuData[i].pos[0]);
+            st->bodytab[j].bodynode.pos.x = gpuData[i].pos[0];
+            st->bodytab[j].bodynode.pos.y = gpuData[i].pos[1];
+            st->bodytab[j].bodynode.pos.z = gpuData[i].pos[2];
+            st->bodytab[j].bodynode.mass = gpuData[i].mass;
+            st->bodytab[j].vel.x = gpuData[i].vel[0];
+            st->bodytab[j].vel.y = gpuData[i].vel[1];
+            st->bodytab[j].vel.z = gpuData[i].vel[2];
+             ++j;
         }
     }
+    printf("NUMBER OF BODIES: %d\n", j);
 }
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
@@ -2435,7 +2447,6 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     
     //RUN BRUTE FORCE SYSTEM:
     nbRunSystemCLExact(ctx, st, gTreeIn, gTreeOut);
-    
     //RUN BARNES-HUT SYSTEM:
     nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
     

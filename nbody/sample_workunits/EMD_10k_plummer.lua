@@ -12,7 +12,7 @@ r0  = arg[3]
 
 dwarfMass  = arg[4]
 
-model1Bodies = 10000
+model1Bodies = 100
 totalBodies = model1Bodies
 
 nbodyLikelihoodMethod = "EMD"
@@ -26,7 +26,7 @@ encMass = plummerTimestepIntegral(r0, sqr(r0) + sqr(r0/arg[4]) , dwarfMass, 1e-7
 
 function makeContext()
    return NBodyCtx.create{
-      timeEvolve = evolveTime,
+      timeEvolve = evolveTime * sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       eps2       = calculateEps2(totalBodies, r0),
       criterion  = "Exact",
