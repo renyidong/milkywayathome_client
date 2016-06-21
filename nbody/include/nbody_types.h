@@ -259,7 +259,7 @@ typedef struct
     cl_kernel forceCalculation;
     cl_kernel integration;
     
-    cl_kernel testAddition;
+    //cl_kernel testAddition;
 
     //Used by exact one only
     cl_kernel forceCalculationExact;

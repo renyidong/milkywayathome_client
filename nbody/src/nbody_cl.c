@@ -437,7 +437,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
     {
         //TESTING: Return to forceCalculation_Exact:
         err |= nbSetKernelArguments(k->forceCalculationExact, st->nbb, exact);
-        //err |= nbSetKernelArguments(k->integration, st->nbb, exact);
+        err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
 
     if (err != CL_SUCCESS)
@@ -469,7 +469,7 @@ cl_int nbReleaseKernels(NBodyState* st)
 //     err |= clReleaseKernel_quiet(kernels->sort);
      err |= clReleaseKernel_quiet(kernels->forceCalculation);
      err |= clReleaseKernel_quiet(kernels->forceCalculationExact);
-//     err |= clReleaseKernel_quiet(kernels->integration);
+     err |= clReleaseKernel_quiet(kernels->integration);
 
     if (err != CL_SUCCESS)
         mwPerrorCL(err, "Error releasing kernels");
@@ -652,7 +652,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 //NOTE: UPDATE KERNELS
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
-    kernels->testAddition = mwCreateKernel(program, "testAddition");
+//    kernels->testAddition = mwCreateKernel(program, "testAddition");
 //     kernels->boundingBox = mwCreateKernel(program, "boundingBox");
 //     kernels->buildTreeClear = mwCreateKernel(program, "buildTreeClear");
 //     kernels->buildTree = mwCreateKernel(program, "buildTree");
@@ -661,11 +661,12 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 //     kernels->quadMoments = mwCreateKernel(program, "quadMoments");
 //     kernels->sort = mwCreateKernel(program, "sort");
     kernels->forceCalculation = mwCreateKernel(program, "forceCalculation");
-    //kernels->integration = mwCreateKernel(program, "integration");
+    kernels->integration = mwCreateKernel(program, "integration");
     kernels->forceCalculationExact = mwCreateKernel(program, "forceCalculationExact");
 //     kernels->testAddition = mwCreateKernel(program, "testAddition");
     return(     kernels->forceCalculation
-            &&  kernels->forceCalculationExact);
+            &&  kernels->forceCalculationExact
+            &&  kernels->integration);
 //     return (   kernels->boundingBox
 //             && kernels->buildTreeClear
 //             && kernels->buildTree
@@ -1419,14 +1420,14 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
                                     0, NULL, &ev);
     if (err != CL_SUCCESS)
         return err;
-
-    // if(st->usesExact){
-    //       err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
-    //                                    0, global, local,
-    //                                    0, NULL, &integrateEv);
-    //       if (err != CL_SUCCESS)
-    //           return err;
-    //     }
+    clWaitForEvents(1, &ev);
+    if(st->usesExact){
+          err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
+                                       0, global, local,
+                                       0, NULL, &integrateEv);
+          if (err != CL_SUCCESS)
+              return err;
+        }
     //ws->timings[5] += waitReleaseEventWithTime(ev);
     
     
@@ -2141,7 +2142,7 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
     return CL_SUCCESS;
 }
-void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
+void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
     //Create gpu tree array:
     //Fill TreeArray:
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
@@ -2224,104 +2225,6 @@ void fillGPUTreeFixed(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
         
         ++n; //Increment our index
         //printf("%i \n", n);
-    }
-}
-
-
-void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
-{
-    //Create gpu tree array:
-    //Fill TreeArray:
-    const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
-    unsigned int n = 0; //Start at initial index
-    const Body* p = NULL;
-    printf("%i\n", st->tree.cellUsed);
-    printf("%i\n", st->effNBody);
-    while(q != NULL)
-    {
-        //Add Node Data to Array
-        //POSITION:
-        mwvector pos = Pos(q);
-        gpT[n].pos[0] = pos.x;
-        gpT[n].pos[1] = pos.y;
-        gpT[n].pos[2] = pos.z;
-        
-        if(isBody(q))
-        {
-            p = q;
-        //VELOCITY:
-            gpT[n].vel[0] = p->vel.x;
-            gpT[n].vel[1] = p->vel.y;
-            gpT[n].vel[2] = p->vel.z;
-
-        }
-        //MASS:
-        gpT[n].mass = q->mass;
-        //printf("THE MASS IS: %f\n", gpT[10].mass);
-        //QUAD:
-        if(ctx->useQuad && isCell(q)) //If Cell, and using quad, calculate quad moments
-        {
-            gpT[n].quad.xx = Quad(q).xx;
-            gpT[n].quad.xy = Quad(q).xy;
-            gpT[n].quad.xz = Quad(q).xz;
-            gpT[n].quad.yy = Quad(q).yy;
-            gpT[n].quad.yz = Quad(q).yz;
-            gpT[n].quad.zz = Quad(q).zz;
-        }
-        else //Otherwise initialize to -1
-        {
-            gpT[n].quad.xx = -1;
-            gpT[n].quad.xy = -1;
-            gpT[n].quad.xz = -1;
-            gpT[n].quad.yy = -1;
-            gpT[n].quad.yz = -1;
-            gpT[n].quad.zz = -1;
-        }
-            
-        //Now set next and more indicies
-        if(More(q) != NULL)
-        {
-            gpT[n].more = n+1;
-        }
-        else
-        {
-            gpT[n].more = 0;
-        }
-        if(Next(q) == NULL) //if we are at the end of the tree, we just point back at root
-        {
-            gpT[n].next = 0;
-        }
-        else if(isBody(q)) //If we have a body, the next object in the array is always n+1
-        {
-            gpT[n].next = n+1;
-        }
-        else //If we have a cell, the next object in the array is n + numChildren + 1
-        {
-            unsigned int numChild = 0;
-            const NBodyNode* w = q; //Start at current cell to find out how many children it has
-            while(w != Next(q) && w != NULL)
-            {
-                while(More(w) != NULL) //Follow tree to bottom
-                {
-                    ++numChild;
-                    w = More(w);
-                }
-                ++numChild;
-                w  = Next(w); //Traverse tree until we get to Next(q), adding children as we go
-            }
-            gpT[n].next = n + 1 + numChild; //Now we know what the Next() index will be
-        }
-        ++n;
-        printf("%i\n", n);
-        //Set load the next body:
-        if(More(q) != NULL){
-            q = More(q);
-            printf("MORE\n");
-        }
-        else{
-            q = Next(q);
-            printf("NEXT\n");
-        }
     }
 }
 
@@ -2436,7 +2339,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));
     gpuTree* gTreeOut = malloc(n*sizeof(gpuTree));
     
-    fillGPUTreeFixed(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
+    fillGPUTree(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
     printf("%i\n", st->tree.cellUsed);
     printf("%i\n", st->effNBody);
@@ -2448,7 +2351,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     //RUN BRUTE FORCE SYSTEM:
     nbRunSystemCLExact(ctx, st, gTreeIn, gTreeOut);
     //RUN BARNES-HUT SYSTEM:
-    nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
+    //nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
     
     free(gTreeIn);
     free(gTreeOut);
