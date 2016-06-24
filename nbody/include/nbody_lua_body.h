@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 Body* checkBody(lua_State* luaSt, int idx);
 Body* expectBody(lua_State* luaSt, int idx);
-int pushBody(lua_State* luaSt, const Body* b);
+int pushBody(lua_State* luaSt, Body* b);
 int registerBody(lua_State* luaSt);
 
 #endif /* _NBODY_LUA_BODY_H_ */

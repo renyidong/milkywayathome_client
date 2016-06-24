@@ -214,6 +214,7 @@ typedef struct
     
     real mass;
     
+    unsigned int bodyID;
     unsigned int next;
     unsigned int more;
     
@@ -1167,13 +1168,15 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
                     }
                     //Calculate distance between two bodies:
                     
-                    real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], drVec[2] * drVec[2])) + EPS2;
+                    real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], mad(drVec[2], drVec[2], EPS2)));
                     real dr = sqrt(dr2);
                     real m2 = tmp->mass;
+                    real ai = m2/(dr*dr2);
                     
-                    _gTreeIn[a].acc[0] += (m2 * (drVec[0]/(dr2*dr)));
-                    _gTreeIn[a].acc[1] += (m2 * (drVec[1]/(dr2*dr)));
-                    _gTreeIn[a].acc[2] += (m2 * (drVec[2]/(dr2*dr)));
+                    _gTreeIn[a].acc[0] = mad(ai, drVec[0], _gTreeIn[a].acc[0]);
+                    _gTreeIn[a].acc[1] = mad(ai, drVec[1], _gTreeIn[a].acc[1]);
+                    _gTreeIn[a].acc[2] = mad(ai, drVec[2], _gTreeIn[a].acc[2]);
+                       
                 }
                     
                 
@@ -1190,55 +1193,9 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
             }
         }        
     }
-    // barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE);
 //=========================================
 }
-    
-  
-//////////////////////////////////////
-//EXPERIMENTAL BRUTE FORCE KERNEL:
-/////////////////////////////////////
-/*__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
-__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
-{
-  
-  int a = (int)get_global_id(0);
-//     if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
-//         _gTreeOut = _gTreeIn;
-//     }
-  _gTreeOut[a].mass = _gTreeIn[a].mass;
-  _gTreeOut[a].isBody = _gTreeIn[a].isBody;
-  
-  real pos1[3];
-  real pos2[3];
-  real drVec[3];
-
-  for(int i = 0; i < 3; ++i){
-    _gTreeOut[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
-    pos1[i] = _gTreeIn[a].pos[i];
-  }
-  for(int j = a; j < EFFNBODY; ++j){
-    for(int i = 0; i < 3; ++i){
-      pos2[i] = _gTreeIn[j].pos[i];
-      drVec[i] = (pos2[i] - pos1[i]);
-    }
-    real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], drVec[2] * drVec[2])) + EPS2;
-    real dr = sqrt(dr2);
-    
-    //Calculate acceleration between the two bodies:
-//                     _gTreeOut[a].acc[0] += 10;
-//                     _gTreeOut[a].acc[1] += 10;
-//                     _gTreeOut[a].acc[2] += 10;
-    _gTreeOut[a].acc[0] += (_gTreeIn[j].mass * drVec[0])/(dr2*dr);
-    _gTreeOut[a].acc[1] += (_gTreeIn[j].mass * drVec[1])/(dr2*dr);
-    _gTreeOut[a].acc[2] += (_gTreeIn[j].mass * drVec[2])/(dr2*dr);
-  }
-
-  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-}*/
-//////////////////////////////////////////////////
-
-    
     
 
 //     __local uint maxDepth;
@@ -1616,7 +1573,8 @@ __kernel void integration(GTPtr _gTreeIn, GTPtr _gTreeOut)
     _gTreeIn[a].vel[0] = vx;
     _gTreeIn[a].vel[1] = vy;
     _gTreeIn[a].vel[2] = vz; 
-    
+
+    _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
   }
   barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 //Copy Output data to input:

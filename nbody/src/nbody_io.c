@@ -58,7 +58,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
     if (both)
     {
-        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 "x", 
                 "y",  
                 "z",  
@@ -68,19 +68,21 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
                 "v_x",
                 "v_y",
                 "v_z",
-                "mass"
+                "mass",
+                "BodyID"
             );
     }
     else
     {
-        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 cartesian ? "x" : "l",
                 cartesian ? "y" : "b",
                 cartesian ? "z" : "r",
                 "v_x",
                 "v_y",
                 "v_z",
-                "mass"
+                "mass",
+                "Body ID"
             );
     }
     
@@ -102,26 +104,26 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %15d\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), p->bodynode.bodyID);
         }
         else if (nbf->outputlbrCartesian)
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %15d\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));   
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), p->bodynode.bodyID);   
         }
         else
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %15d\n",
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), p->bodynode.bodyID);
         }
     }
 

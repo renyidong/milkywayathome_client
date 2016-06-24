@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _NBODY_TYPES_H_
 #define _NBODY_TYPES_H_
-
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
  *
@@ -99,13 +98,20 @@ typedef short body_t;
 /* node: data common to BODY and CELL structures. */
 typedef struct MW_ALIGN_TYPE _NBodyNode
 {
+    //#ifdef DEBUG
+        unsigned int bodyID;
+    //#endif
     mwvector pos;             /* position of node */
     struct _NBodyNode* next;  /* link to next force-calc */
     real mass;                /* total mass of node */
     body_t type;              /* code for node type */
 } NBodyNode;
 
-#define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0  }
+//#ifdef DEBUG
+    #define EMPTY_NODE { 0, ZERO_VECTOR, NULL, 0.0, 0  }
+// #else
+//     #define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0 }
+// #endif
 
 #define Type(x) (((NBodyNode*) (x))->type)
 #define Mass(x) (((NBodyNode*) (x))->mass)
@@ -279,6 +285,7 @@ typedef struct
 
     real mass;
 
+    unsigned int bodyID;
     unsigned int next;
     unsigned int more;
 

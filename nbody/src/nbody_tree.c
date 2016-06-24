@@ -431,14 +431,15 @@ NBodyStatus nbMakeTree(const NBodyCtx* ctx, NBodyState* st)
     Body* p;
     const Body* endp = st->bodytab + st->nbody;
     NBodyTree* t = &st->tree;
-
+    
     nbNewTree(st, t);                                /* flush existing tree, etc */
 
     expandBox(t, st->bodytab, st->nbody);            /* and expand cell to fit */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
-        if (Mass(p) != 0.0)                  /* exclude test particles */
-            nbLoadBody(st, t, p);              /* and insert into tree */
+        if (Mass(p) != 0.0){                  /* exclude test particles */
+            nbLoadBody(st, t, p);             /* and insert into tree */
+        }
     }
 
     /* Check if tree structure error occured */

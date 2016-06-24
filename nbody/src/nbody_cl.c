@@ -2161,6 +2161,10 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
         
         if(isBody(q)){ //Check if q is a body
             p = q;
+            //#ifdef DEBUG
+              gpT[n].bodyID = p->bodynode.bodyID;
+              
+            //#endif
             gpT[n].vel[0] = p->vel.x;
             gpT[n].vel[1] = p->vel.y;
             gpT[n].vel[2] = p->vel.z;
@@ -2313,10 +2317,11 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     int j = 0;
     for(int i = 0; i < n; ++i){
         if(gpuData[i].isBody == 1){
-          printf("BODY Position: %f \n", gpuData[i].pos[0]);
+          printf("BODY ID: %d \n", gpuData[i].bodyID);
             st->bodytab[j].bodynode.pos.x = gpuData[i].pos[0];
             st->bodytab[j].bodynode.pos.y = gpuData[i].pos[1];
             st->bodytab[j].bodynode.pos.z = gpuData[i].pos[2];
+            st->bodytab[j].bodynode.bodyID = gpuData[i].bodyID;
             st->bodytab[j].bodynode.mass = gpuData[i].mass;
             st->bodytab[j].vel.x = gpuData[i].vel[0];
             st->bodytab[j].vel.y = gpuData[i].vel[1];
@@ -2333,7 +2338,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     const Body* b = &st->bodytab[1];
     mwvector a = Pos(b);
     printf(">>>>> %f  <<<<< \n", a.x);
-    
+
     //Create Buffer:
     int n = (st->effNBody + st->tree.cellUsed);
     gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));

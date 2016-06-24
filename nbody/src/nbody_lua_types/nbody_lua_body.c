@@ -52,8 +52,11 @@ Body* expectBody(lua_State* luaSt, int idx)
 }
 
 
-int pushBody(lua_State* luaSt, const Body* p)
+int pushBody(lua_State* luaSt, Body* p)
 {
+    static unsigned int id = 0;
+    p->bodynode.bodyID = id;
+    ++id;
     return pushType(luaSt, BODY_TYPE, sizeof(Body), (void*) p);
 }
 
