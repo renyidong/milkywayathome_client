@@ -1421,13 +1421,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (err != CL_SUCCESS)
         return err;
     clWaitForEvents(1, &ev);
-    if(st->usesExact){
-          err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
-                                       0, global, local,
-                                       0, NULL, &integrateEv);
-          if (err != CL_SUCCESS)
-              return err;
-        }
+    
     //ws->timings[5] += waitReleaseEventWithTime(ev);
     
     
@@ -2168,6 +2162,9 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
             gpT[n].vel[0] = p->vel.x;
             gpT[n].vel[1] = p->vel.y;
             gpT[n].vel[2] = p->vel.z;
+            gpT[n].acc[0] = 0;
+            gpT[n].acc[1] = 0;
+            gpT[n].acc[2] = 0;
             gpT[n].isBody = 1; //Flag as body
             gpT[n].more = 0; //Bodies do not have (more) indices.
             if(Next(q) != NULL){
@@ -2263,12 +2260,15 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
 
     //Set kernel arguments:
     for(int n = 0; n < ctx->nStep; ++n){
+        //RUN ADVANCE VELOCITY
+        //RUN ADVANCE POSITION
         err = nbExecuteForceKernels(st, CL_TRUE);
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error executing force kernels");
             return NBODY_CL_ERROR;
         }
+        //RUN ADVANCE VELOCITY
     }
   
     
@@ -2317,7 +2317,12 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     int j = 0;
     for(int i = 0; i < n; ++i){
         if(gpuData[i].isBody == 1){
-          printf("BODY ID: %d \n", gpuData[i].bodyID);
+          printf("BODY ID: %d, ACCELERATION: %f,%f,%f\n", 
+            gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
+          printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
+            gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
+          printf("BODY ID: %d, POSITION: %f,%f,%f\n", 
+            gpuData[i].bodyID, gpuData[i].pos[0], gpuData[i].pos[1], gpuData[i].pos[2]);
             st->bodytab[j].bodynode.pos.x = gpuData[i].pos[0];
             st->bodytab[j].bodynode.pos.y = gpuData[i].pos[1];
             st->bodytab[j].bodynode.pos.z = gpuData[i].pos[2];

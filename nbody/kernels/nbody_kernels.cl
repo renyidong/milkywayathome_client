@@ -1156,7 +1156,7 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
         GTPtr tmp = &_gTreeIn[0];
         while(tmp != NULL){
             if(tmp->isBody == 1){ //If it's a body we can go to the next value
-                if(tmp != &_gTreeIn[a]){    //make sure we aren't self-interacting:
+                //if(tmp != &_gTreeIn[a]){    //make sure we aren't self-interacting:
                     real pos1[3];
                     real pos2[3];
                     real drVec[3];
@@ -1168,16 +1168,21 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
                     }
                     //Calculate distance between two bodies:
                     
-                    real dr2 = mad(drVec[0], drVec[0], mad(drVec[1], drVec[1], mad(drVec[2], drVec[2], EPS2)));
+                    real dr2 = mad(drVec[2], drVec[2], mad(drVec[1], drVec[1], drVec[0] * drVec[0])) + EPS2;
+                    //real dr2 = (drVec[0] * drVec[0]) + (drVec[1] * drVec[1]) + (drVec[2] * drVec[2]) + EPS2;
                     real dr = sqrt(dr2);
                     real m2 = tmp->mass;
                     real ai = m2/(dr*dr2);
+
+                    _gTreeIn[a].acc[0] += ai * drVec[0];
+                    _gTreeIn[a].acc[1] += ai * drVec[1];
+                    _gTreeIn[a].acc[2] += ai * drVec[2];
                     
-                    _gTreeIn[a].acc[0] = mad(ai, drVec[0], _gTreeIn[a].acc[0]);
-                    _gTreeIn[a].acc[1] = mad(ai, drVec[1], _gTreeIn[a].acc[1]);
-                    _gTreeIn[a].acc[2] = mad(ai, drVec[2], _gTreeIn[a].acc[2]);
+                    // _gTreeIn[a].acc[0] = mad(ai, drVec[0], _gTreeIn[a].acc[0]);
+                    // _gTreeIn[a].acc[1] = mad(ai, drVec[1], _gTreeIn[a].acc[1]);
+                    // _gTreeIn[a].acc[2] = mad(ai, drVec[2], _gTreeIn[a].acc[2]);
                        
-                }
+                //}
                     
                 
                 
@@ -1530,18 +1535,11 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
 //         }
 //    }
 //}
-
 __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void integration(GTPtr _gTreeIn, GTPtr _gTreeOut)
+__kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
-
-
   int a = get_global_id(0);
   if(_gTreeIn[a].isBody == 1){
-    real px = _gTreeIn[a].pos[0];
-    real py = _gTreeIn[a].pos[1];
-    real pz = _gTreeIn[a].pos[2];
-    
     real vx = _gTreeIn[a].vel[0];
     real vy = _gTreeIn[a].vel[1];
     real vz = _gTreeIn[a].vel[2];
@@ -1557,30 +1555,50 @@ __kernel void integration(GTPtr _gTreeIn, GTPtr _gTreeOut)
     vx += dvx;
     vy += dvy;
     vz += dvz;
+
+    _gTreeIn[a].vel[0] = vx;
+    _gTreeIn[a].vel[1] = vy;
+    _gTreeIn[a].vel[2] = vz;
+  }
+
+}
+
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+__kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
+{
+
+  int a = get_global_id(0);
+  if(_gTreeIn[a].isBody == 1){
+    real px = _gTreeIn[a].pos[0];
+    real py = _gTreeIn[a].pos[1];
+    real pz = _gTreeIn[a].pos[2];
     
+    real vx = _gTreeIn[a].vel[0];
+    real vy = _gTreeIn[a].vel[1];
+    real vz = _gTreeIn[a].vel[2];
+
     px = mad(TIMESTEP, vx, px);
     py = mad(TIMESTEP, vy, py);
     pz = mad(TIMESTEP, vz, pz);
 
-    vx += dvx;
-    vy += dvy;
-    vz += dvz;
-    
     _gTreeIn[a].pos[0] = px;
     _gTreeIn[a].pos[1] = py;
     _gTreeIn[a].pos[2] = pz;
 
-    _gTreeIn[a].vel[0] = vx;
-    _gTreeIn[a].vel[1] = vy;
-    _gTreeIn[a].vel[2] = vz; 
+  }
+}
 
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+__kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
+{
+  int a = get_global_id(0);
+  if(_gTreeIn[a].isBody == 1){
     _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
   }
-  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-//Copy Output data to input:
   for(int i = 0; i < 3; ++i){
     _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
     _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];
+    _gTreeOut[a].acc[i] = _gTreeIn[a].acc[i];
   }
   _gTreeOut[a].mass = _gTreeIn[a].mass;
   _gTreeOut[a].isBody = _gTreeIn[a].isBody;

@@ -176,7 +176,12 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         nbReportProgress(ctx, st);
         nbUpdateDisplayedBodies(ctx, st);
     }
-    
+
+    for(int i = 0; i < st->nbody; ++i){
+        printf("BODY ID: %d, ACCELERATION: %f,%f,%f\n", 
+        st->bodytab[i].bodynode.bodyID, st->acctab[i].x, st->acctab[i].y, st->acctab[i].z);
+
+    }   
     #ifdef NBODY_BLENDER_OUTPUT
         blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
     #endif

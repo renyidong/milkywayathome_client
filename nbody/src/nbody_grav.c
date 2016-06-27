@@ -59,23 +59,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
         mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
         real drSq = mw_sqrv(dr);               /* and distance squared */
         
-//         temp.rX = dr.x;
-//         temp.rY = dr.y;
-//         temp.rZ = dr.z;
-        
-        
-        //Create array, with radius, and then either mass or quad moment
-        //
-        //
-        //      /--------------------------------------------\
-        //      | 1  | 1  | 0  | 0  | 1  | 1  | 0  | 0  | 0  | bodyValue (1 if body, 0 if cell)
-        //      |--------------------------------------------|
-        //      | r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8 | r9 | radius to CoM
-        //      |--------------------------------------------|
-        //      | m1 | m2 | q3 | q4 | m5 | m6 | q7 | q8 | q9 | Mass or QuadMoment
-        //      \--------------------------------------------/
-        //
-        
+
         if (isBody(q) || (drSq >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
         {
             if (mw_likely((const Body*) q != p))   /* self-interaction? */
@@ -210,7 +194,6 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
-
         mwvector dr = mw_subv(Pos(b), Pos(p));
         real drSq = mw_sqrv(dr) + eps2;
 
