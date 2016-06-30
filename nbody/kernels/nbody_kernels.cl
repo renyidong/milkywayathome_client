@@ -1592,9 +1592,7 @@ __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
-  if(_gTreeIn[a].isBody == 1){
-    _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
-  }
+ _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
   for(int i = 0; i < 3; ++i){
     _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
     _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];

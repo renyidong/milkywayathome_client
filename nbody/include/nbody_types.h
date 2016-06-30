@@ -264,6 +264,9 @@ typedef struct
 //     cl_kernel quadMoments;
     cl_kernel forceCalculation;
     cl_kernel integration;
+    cl_kernel advanceHalfVelocity;
+    cl_kernel advancePosition;
+    cl_kernel outputData;
     
     //cl_kernel testAddition;
 
