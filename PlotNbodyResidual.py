@@ -92,6 +92,8 @@ averageResidual = sum/(len(r)*1.0)
 print "AVERAGE RESIDUAL: " + str(averageResidual) + "\n"
 plt.subplot(224)
 binwidth = (max(r)-min(r))/50.0
+if(binwidth < .001):
+	binwidth = .001
 plt.hist(r, bins=np.arange(min(r), max(r) + binwidth, binwidth), label="Residual");
 legend = plt.legend(loc="upper right")
 plt.show();

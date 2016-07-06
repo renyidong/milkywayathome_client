@@ -1399,13 +1399,13 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (st->usesExact)
     {
         forceKern = kernels->forceCalculationExact;
-        global[0] = ws->global[5];
+        global[0] = 8192;
         local[0] = ws->local[5];
     }
     else
     {
         forceKern = kernels->forceCalculation;
-        global[0] = ws->global[5];
+        global[0] = 8192;
         local[0] = ws->local[5];
     }
     //Run kernel:
@@ -1479,7 +1479,7 @@ static cl_int nbAdvanceHalfVelocity(NBodyState* st, cl_bool updateState)
 
     
     velKern = kernels->advanceHalfVelocity;
-    global[0] = ws->global[5];
+    global[0] = 8192;
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1511,7 +1511,7 @@ static cl_int nbAdvancePosition(NBodyState* st, cl_bool updateState)
 
     
     posKern = kernels->advancePosition;
-    global[0] = ws->global[5];
+    global[0] = 8192;
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1540,10 +1540,10 @@ static cl_int nbOutputData(NBodyState* st, cl_bool updateState)
     NBodyKernels* kernels = st->kernels;
     NBodyWorkSizes* ws = st->workSizes;
     cl_int effNBody = st->effNBody;
-
     
     dataOut = kernels->outputData;
-    global[0] = ws->global[5];
+    global[0] = 8192;
+    printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -2399,7 +2399,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
       err = nbOutputData(st, CL_TRUE);
       if (err != CL_SUCCESS)
       {
-          mwPerrorCL(err, "Error executing half velocity kernels");
+          mwPerrorCL(err, "Error executing data output kernels");
           return NBODY_CL_ERROR;
       }
       ++st->step;
