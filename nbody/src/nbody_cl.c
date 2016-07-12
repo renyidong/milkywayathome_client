@@ -1399,13 +1399,13 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (st->usesExact)
     {
         forceKern = kernels->forceCalculationExact;
-        global[0] = 8192;
+        global[0] = 1024;
         local[0] = ws->local[5];
     }
     else
     {
         forceKern = kernels->forceCalculation;
-        global[0] = 8192;
+        global[0] = 1024;
         local[0] = ws->local[5];
     }
     //Run kernel:
@@ -1479,7 +1479,7 @@ static cl_int nbAdvanceHalfVelocity(NBodyState* st, cl_bool updateState)
 
     
     velKern = kernels->advanceHalfVelocity;
-    global[0] = 8192;
+    global[0] = 1024;
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1511,7 +1511,7 @@ static cl_int nbAdvancePosition(NBodyState* st, cl_bool updateState)
 
     
     posKern = kernels->advancePosition;
-    global[0] = 8192;
+    global[0] = 1024;
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1542,8 +1542,8 @@ static cl_int nbOutputData(NBodyState* st, cl_bool updateState)
     cl_int effNBody = st->effNBody;
     
     dataOut = kernels->outputData;
-    global[0] = 8192;
-    printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
+    global[0] = 1024;
+    //printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1764,6 +1764,14 @@ cl_int nbFindEffectiveNBody(const NBodyWorkSizes* workSizes, cl_bool exact, cl_i
     }
 }
 
+cl_int nbSizeGPUTree(NBodyState* st){
+  if(st->usesExact){
+    return mwNextMultiple((cl_int) st->workSizes->local[7], (st->nbody + st->tree.cellUsed));
+  }
+  else{
+    return st->nbody;
+  }
+}
 //NOTE: Works So Far
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -1774,7 +1782,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     size_t massSize;
     cl_int err;
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
-    int buffSize = st->effNBody + st->tree.cellUsed;
+    int buffSize = st->gpuTreeSize;
     printf("Buffer Size: %d\n", buffSize);
     // st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
     // st->nbb->output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
@@ -2325,7 +2333,7 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
             if(More(q) == NULL){
                 printf("Interesting:\n");
             }
-            if(gpT[n].more > (st->effNBody + st->tree.cellUsed)){
+            if(gpT[n].more > (st->gpuTreeSize)){
                 printf("OOPS M8: %i\n", gpT[n].more);
             }
             q = More(q); //If we are in a cell, we must go deeper
@@ -2333,6 +2341,19 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
         
         ++n; //Increment our index
         //printf("%i \n", n);
+    }
+    while(n <  st->gpuTreeSize){ //FILL EMPTY GPU TREE SPOTS:
+      gpT[n].mass = 0;
+      gpT[n].bodyID = -1;
+      gpT[n].isBody = 0;
+      gpT[n].vel[0] = 0;
+      gpT[n].vel[1] = 0;
+      gpT[n].vel[2] = 0;
+      gpT[n].acc[0] = 0;
+      gpT[n].acc[1] = 0;
+      gpT[n].acc[2] = 0;
+      gpT[n].more = 0;
+      ++n;
     }
 }
 
@@ -2349,7 +2370,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     
     
     //Write Buffer:
-    int buffSize = st->effNBody + st->tree.cellUsed;
+    int buffSize = st->gpuTreeSize;
     printf("Buffer Size: %d\n", buffSize);
     //TODO: Figure out why buffer isn't being used by GPU
     printf("DATA CHECK INITIAL: %f\n", gTreeIn[0].mass);
@@ -2447,7 +2468,7 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 }
 
 NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip bodies out of GPU Tree
-    int n = (st->effNBody + st->tree.cellUsed);
+    int n = st->gpuTreeSize;
     int j = 0;
     int minimumBID = n;
     for(int i = 0; i < n; ++i){
@@ -2478,12 +2499,14 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     //FILL GPU VECTOR:
+    printf("GPU TREE SIZE: %d\n", st->gpuTreeSize);
+    st->effNBody = st->effNBody - st->tree.cellUsed;
     const Body* b = &st->bodytab[1];
     mwvector a = Pos(b);
     printf(">>>>> %f  <<<<< \n", a.x);
 
     //Create Buffer:
-    int n = (st->effNBody + st->tree.cellUsed);
+    int n = st->gpuTreeSize;
     gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));
     gpuTree* gTreeOut = malloc(n*sizeof(gpuTree));
     
