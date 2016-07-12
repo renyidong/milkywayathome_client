@@ -1139,403 +1139,110 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 //  forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut   
 // }
 
-__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
-__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
-{
-    
-    int a = (int)get_global_id(0);
-//     if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
-//         _gTreeOut = _gTreeIn;
-//     }
-    
-    for(int i = 0; i < 3; ++i){
-       _gTreeIn[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
-    }
-    //TODO: start writing force calculations
-    if(_gTreeIn[a].isBody == 1){
-        GTPtr tmp = &_gTreeIn[0];
-        while(tmp != NULL){
-            if(tmp->isBody == 1){ //If it's a body we can go to the next value
-                //if(tmp != &_gTreeIn[a]){    //make sure we aren't self-interacting:
-                    real pos1[3];
-                    real pos2[3];
-                    real drVec[3];
-                    real compVec[3];
-                    for(int i = 0; i < 3; ++i){
-                        pos1[i] = _gTreeIn[a].pos[i];
-                        pos2[i] = tmp->pos[i];
-                        drVec[i] = (pos2[i] - pos1[i]);
-                    }
-                    //Calculate distance between two bodies:
-                    
-                    real dr2 = mad(drVec[2], drVec[2], mad(drVec[1], drVec[1], drVec[0] * drVec[0])) + EPS2;
-                    //real dr2 = (drVec[0] * drVec[0]) + (drVec[1] * drVec[1]) + (drVec[2] * drVec[2]) + EPS2;
-                    real dr = sqrt(dr2);
-                    real m2 = tmp->mass;
-                    real ai = m2/(dr*dr2);
+//__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 
-                    _gTreeIn[a].acc[0] += ai * drVec[0];
-                    _gTreeIn[a].acc[1] += ai * drVec[1];
-                    _gTreeIn[a].acc[2] += ai * drVec[2];
+
+// __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut)
+// {
+    
+//     int a = (int)get_global_id(0);
+// //     if(a == 0){ //We set the output array in the first thread, since we don't want to do it in every thread; That would be a waste.
+// //         _gTreeOut = _gTreeIn;
+// //     }
+    
+//     for(int i = 0; i < 3; ++i){
+//        _gTreeIn[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
+//     }
+//     //TODO: start writing force calculations
+//     if(_gTreeIn[a].isBody == 1){
+//         GTPtr tmp = &_gTreeIn[0];
+//         while(tmp != NULL){
+//             if(tmp->isBody == 1){ //If it's a body we can go to the next value
+//                 //if(tmp != &_gTreeIn[a]){    //make sure we aren't self-interacting:
+//                     real pos1[3];
+//                     real pos2[3];
+//                     real drVec[3];
+//                     real compVec[3];
+//                     for(int i = 0; i < 3; ++i){
+//                         pos1[i] = _gTreeIn[a].pos[i];
+//                         pos2[i] = tmp->pos[i];
+//                         drVec[i] = (pos2[i] - pos1[i]);
+//                     }
+//                     //Calculate distance between two bodies:
                     
-                    // _gTreeIn[a].acc[0] = mad(ai, drVec[0], _gTreeIn[a].acc[0]);
-                    // _gTreeIn[a].acc[1] = mad(ai, drVec[1], _gTreeIn[a].acc[1]);
-                    // _gTreeIn[a].acc[2] = mad(ai, drVec[2], _gTreeIn[a].acc[2]);
+//                     real dr2 = mad(drVec[2], drVec[2], mad(drVec[1], drVec[1], drVec[0] * drVec[0])) + EPS2;
+//                     //real dr2 = (drVec[0] * drVec[0]) + (drVec[1] * drVec[1]) + (drVec[2] * drVec[2]) + EPS2;
+//                     real dr = sqrt(dr2);
+//                     real m2 = tmp->mass;
+//                     real ai = m2/(dr*dr2);
+
+//                     _gTreeIn[a].acc[0] += ai * drVec[0];
+//                     _gTreeIn[a].acc[1] += ai * drVec[1];
+//                     _gTreeIn[a].acc[2] += ai * drVec[2];
+                    
+//                     // _gTreeIn[a].acc[0] = mad(ai, drVec[0], _gTreeIn[a].acc[0]);
+//                     // _gTreeIn[a].acc[1] = mad(ai, drVec[1], _gTreeIn[a].acc[1]);
+//                     // _gTreeIn[a].acc[2] = mad(ai, drVec[2], _gTreeIn[a].acc[2]);
                        
-                //}
+//                 //}
                     
                 
                 
-                if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
-                    tmp = &_gTreeIn[tmp->next];
-                }
-                else{ //If there are no more bodies in the (next) index, we must be at the end of the tree
-                    tmp = NULL;
-                }
-            }
-            else{ //If not body, then must be cell
-                tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
-            }
-        }        
-    }
-    barrier(CLK_GLOBAL_MEM_FENCE);
-//=========================================
-}
-    
-
-//     __local uint maxDepth;
-//     __local real rootCritRadius;
-// 
-//     __local volatile int ch[THREADS6 / WARPSIZE];
-//     __local volatile real nx[THREADS6 / WARPSIZE], ny[THREADS6 / WARPSIZE], nz[THREADS6 / WARPSIZE];
-//     __local volatile real nm[THREADS6 / WARPSIZE];
-// 
-//     /* Stack things */
-//     __local volatile int pos[MAXDEPTH * THREADS6 / WARPSIZE], node[MAXDEPTH * THREADS6 / WARPSIZE];
-//     __local volatile real dq[MAXDEPTH * THREADS6 / WARPSIZE];
-// 
-//   #if USE_QUAD
-//     __local real rootQXX, rootQXY, rootQXZ;
-//     __local real rootQYY, rootQYZ;
-//     __local real rootQZZ;
-// 
-//     __local volatile real quadXX[MAXDEPTH * THREADS6 / WARPSIZE];
-//     __local volatile real quadXY[MAXDEPTH * THREADS6 / WARPSIZE];
-//     __local volatile real quadXZ[MAXDEPTH * THREADS6 / WARPSIZE];
-// 
-//     __local volatile real quadYY[MAXDEPTH * THREADS6 / WARPSIZE];
-//     __local volatile real quadYZ[MAXDEPTH * THREADS6 / WARPSIZE];
-// 
-//     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
-//   #endif /* USE_QUAD */
-// 
-// 
-//   #if !HAVE_INLINE_PTX
-//     /* Used by the fake thread voting function.
-//        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
-//     */
-//     __local volatile int allBlock[THREADS6 / WARPSIZE];
-//   #endif /* !HAVE_INLINE_PTX */
-// 
-//     if (get_local_id(0) == 0)
-//     {
-//         maxDepth = _treeStatus->maxDepth;
-//         real rootSize = _treeStatus->radius;
-// 
-//       #if USE_QUAD
-//         rootQXX = _quadXX[NNODE];
-//         rootQXY = _quadXY[NNODE];
-//         rootQXZ = _quadXZ[NNODE];
-//         rootQYY = _quadYY[NNODE];
-//         rootQYZ = _quadYZ[NNODE];
-//         rootQZZ = _quadZZ[NNODE];
-//       #endif
-// 
-//         if (SW93 || NEWCRITERION)
-//         {
-//             rootCritRadius = _critRadii[NNODE];
-//         }
-//         else if (BH86)
-//         {
-//             real rc;
-// 
-//             if (THETA == 0.0)
-//             {
-//                 rc = 2.0 * rootSize;
+//                 if(tmp->next != 0){ //Check to see that we aren't at the end and pointing back to root
+//                     tmp = &_gTreeIn[tmp->next];
+//                 }
+//                 else{ //If there are no more bodies in the (next) index, we must be at the end of the tree
+//                     tmp = NULL;
+//                 }
 //             }
-//             else
-//             {
-//                 rc = rootSize / THETA;
+//             else{ //If not body, then must be cell
+//                 tmp = &_gTreeIn[tmp->more]; //cells MUST have a (more) index
 //             }
-// 
-//             /* Precompute values that depend only on tree level */
-//             dq[0] = rc * rc;
-//             for (uint i = 1; i < maxDepth; ++i)
-//             {
-//                 dq[i] = 0.25 * dq[i - 1];
-//             }
-//         }
-// 
-//       #if !HAVE_INLINE_PTX
-//         for (uint i = 0; i < THREADS6 / WARPSIZE; ++i)
-//         {
-//             allBlock[i] = 0;
-//         }
-//       #endif
-// 
-//         if (maxDepth > MAXDEPTH)
-//         {
-//             _treeStatus->errorCode = maxDepth;
-//         }
+//         }        
 //     }
-//     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-// 
-//     if (maxDepth <= MAXDEPTH)
-//     {
-//         /* Figure out first thread in each warp */
-//         uint base = get_local_id(0) / WARPSIZE;
-//         uint sbase = base * WARPSIZE;
-//         int j = base * MAXDEPTH;
-//         int diff = get_local_id(0) - sbase; /* Index in warp */
-// 
-//         if (BH86 || EXACT)
-//         {
-//             /* Make multiple copies to avoid index calculations later */
-//             if (diff < MAXDEPTH)
-//             {
-//                 dq[diff + j] = dq[diff];
-//             }
-//             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-//         }
-// 
-//         uint k = get_global_id(0);
-// 
-//       #if !HAVE_INLINE_PTX
-//         (void) atom_add(&allBlock[base], k >= maxNBody);
-//       #endif
+//     barrier(CLK_GLOBAL_MEM_FENCE);
+// //=========================================
+// }
 
-        /* iterate over all bodies assigned to thread */
-//         while (k < maxNBody)
-//         {
-//             int i = _sort[k];  /* Get permuted index */
-// 
-//             /* Cache position info */
-//             real px = _posX[i];
-//             real py = _posY[i];
-//             real pz = _posZ[i];
-// 
-//             real ax = 0.0;
-//             real ay = 0.0;
-//             real az = 0.0;
-// 
-//             /* Initialize iteration stack, i.e., push root node onto stack */
-//             int depth = j;
-//             if (get_local_id(0) == sbase)
-//             {
-//                 node[j] = NNODE;
-//                 pos[j] = 0;
-// 
-//                 if (SW93 || NEWCRITERION)
-//                 {
-//                     dq[j] = rootCritRadius;
-//                 }
-// 
-//                 #if USE_QUAD
-//                 {
-//                     quadXX[j] = rootQXX;
-//                     quadXY[j] = rootQXY;
-//                     quadXZ[j] = rootQXZ;
-//                     quadYY[j] = rootQYY;
-//                     quadYZ[j] = rootQYZ;
-//                     quadZZ[j] = rootQZZ;
-//                 }
-//                 #endif
-//             }
-//             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-// 
-//             bool skipSelf = false;
-//             do
-//             {
-//                 int curPos;
-// 
-//                 /* Stack is not empty */
-//                 while ((curPos = pos[depth]) < NSUB)
-//                 {
-//                     int n;
-//                     /* Node on top of stack has more children to process */
-//                     if (get_local_id(0) == sbase)
-//                     {
-//                         /* I'm the first thread in the warp */
-//                         n = _child[NSUB * node[depth] + curPos]; /* Load child pointer */
-//                         pos[depth] = curPos + 1;
-//                         ch[base] = n; /* Cache child pointer */
-//                         if (n >= 0)
-//                         {
-//                             /* Cache position and mass */
-//                             nx[base] = _posX[n];
-//                             ny[base] = _posY[n];
-//                             nz[base] = _posZ[n];
-//                             nm[base] = _mass[n];
-//                         }
-//                     }
-//                     mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-// 
-//                     /* All threads retrieve cached data */
-//                     n = ch[base];
-//                     if (n >= 0)
-//                     {
-//                         real dx = nx[base] - px;
-//                         real dy = ny[base] - py;
-//                         real dz = nz[base] - pz;
-//                         real rSq = mad(dz, dz, mad(dy, dy, dx * dx));  /* Compute distance squared */
-// 
-//                         /* Check if all threads agree that cell is far enough away (or is a body) */
-//                         if (isBody(n) || warpAcceptsCell(allBlock, base, rSq, dq[depth]))
-//                         {
-//                             rSq += EPS2;
-// 
-//                           #ifdef __FAST_RELAXED_MATH__
-//                             real rInv = rsqrt(rSq);   /* Compute distance with softening */
-//                             real ai = nm[base] * rInv * rInv * rInv;
-//                             /* FIXME: If EPS is 0, we can get nan */
-//                           #else
-//                             real r = sqrt(rSq);   /* Compute distance with softening */
-//                             real ai = nm[base] / (rSq * r);
-//                           #endif
-// 
-//                             ax = mad(ai, dx, ax);
-//                             ay = mad(ai, dy, ay);
-//                             az = mad(ai, dz, az);
-// 
-//                           #if USE_QUAD
-//                             {
-//                                 if (isCell(n))
-//                                 {
-//                                     real quad_dx, quad_dy, quad_dz;
-// 
-//                                     real dr5inv = 1.0 / (sqr(rSq) * r);
-// 
-//                                     /* Matrix multiply Q . dr */
-//                                     quad_dx = mad(quadXZ[depth], dz, mad(quadXY[depth], dy, quadXX[depth] * dx));
-//                                     quad_dy = mad(quadYZ[depth], dz, mad(quadYY[depth], dy, quadXY[depth] * dx));
-//                                     quad_dz = mad(quadZZ[depth], dz, mad(quadYZ[depth], dy, quadXZ[depth] * dx));
-// 
-//                                     /* dr . Q . dr */
-//                                     real drQdr = mad(quad_dz, dz, mad(quad_dy, dy, quad_dx * dx));
-// 
-//                                     real phiQuad = 2.5 * (dr5inv * drQdr) / rSq;
-// 
-//                                     ax = mad(phiQuad, dx, ax);
-//                                     ay = mad(phiQuad, dy, ay);
-//                                     az = mad(phiQuad, dz, az);
-// 
-//                                     ax = mad(-dr5inv, quad_dx, ax);
-//                                     ay = mad(-dr5inv, quad_dy, ay);
-//                                     az = mad(-dr5inv, quad_dz, az);
-//                                 }
-//                             }
-//                           #endif /* USE_QUAD */
-// 
-// 
-//                             /* Watch for self interaction. It's OK to
-//                              * not skip because dx, dy, dz will be
-//                              * 0.0 */
-//                             if (n == i)
-//                             {
-//                                 skipSelf = true;
-//                             }
-//                         }
-//                         else
-//                         {
-//                             /* Push cell onto stack */
-//                             ++depth;
-//                             if (get_local_id(0) == sbase)
-//                             {
-//                                 node[depth] = n;
-//                                 pos[depth] = 0;
-// 
-//                                 if (SW93 || NEWCRITERION)
-//                                 {
-//                                     dq[depth] = _critRadii[n];
-//                                 }
-// 
-//                                 #if USE_QUAD
-//                                 {
-//                                     quadXX[depth] = _quadXX[n];
-//                                     quadXY[depth] = _quadXY[n];
-//                                     quadXZ[depth] = _quadXZ[n];
-// 
-//                                     quadYY[depth] = _quadYY[n];
-//                                     quadYZ[depth] = _quadYZ[n];
-// 
-//                                     quadZZ[depth] = _quadZZ[n];
-//                                 }
-//                                 #endif /* USE_QUAD */
-//                             }
-//                             /* Full barrier not necessary since items only synced on wavefront level */
-//                             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-//                         }
-//                     }
-//                     else
-//                     {
-//                         /* Early out because all remaining children are also zero */
-//                         depth = max(j, depth - 1);
-//                     }
-//                 }
-//                 --depth;  /* Done with this level */
-//             }
-//             while (depth >= j);
-// 
-//             real accX = _accX[i];
-//             real accY = _accY[i];
-//             real accZ = _accZ[i];
-// 
-//             real vx = _velX[i];
-//             real vy = _velY[i];
-//             real vz = _velZ[i];
-// 
-// 
-//             if (USE_EXTERNAL_POTENTIAL)
-//             {
-//                 real4 acc = externalAcceleration(px, py, pz);
-// 
-//                 ax += acc.x;
-//                 ay += acc.y;
-//                 az += acc.z;
-//             }
-// 
-//             vx = mad(0.5 * TIMESTEP, ax - accX, vx);
-//             vy = mad(0.5 * TIMESTEP, ay - accY, vy);
-//             vz = mad(0.5 * TIMESTEP, az - accZ, vz);
-// 
-//             /* Save computed acceleration */
-//             _accX[i] = ax;
-//             _accY[i] = ay;
-//             _accZ[i] = az;
-// 
-//             if (updateVel)
-//             {
-//                 _velX[i] = vx;
-//                 _velY[i] = vy;
-//                 _velZ[i] = vz;
-//             }
-// 
-//             if (!skipSelf)
-//             {
-//                 _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST;
-//             }
-// 
-// 
-//             k += get_local_size(0) * get_num_groups(0);
-// 
-//           #if !HAVE_INLINE_PTX
-//             /* In case this thread is done with bodies and others in the wavefront aren't */
-//             (void) atom_add(&allBlock[base], k >= maxNBody);
-//           #endif /* !HAVE_INLINE_PTX */
-//         }
-//    }
-//}
-__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+//ALTERNATE FORCE CALCULATION KERNEL:
+__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
+  //TODO:
+  //ITERATE OVER ALL BODIES AFTER CURRENT BODY, DURING EACH CALCULATION,
+  //UPDATE BOTH BODIES ACCELERATIONS. THIS SHOULD PROVIDE A 2X SPEEDUP.
+  int a = (int)get_global_id(0);
+  if(_gTreeIn[a].isBody == 1){
+    for(int i = 0; i < 3; ++i){
+      _gTreeIn[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
+    }
+    for(int i = 0; i < NBODY; ++i){
+      if(_gTreeIn[i].isBody == 1){
+        real pos1[3];
+        real pos2[3];
+        real drVec[3];
+        real compVec[3];
+        for(int j = 0; j < 3; ++j){
+            pos1[j] = _gTreeIn[a].pos[j];
+            pos2[j] = _gTreeIn[i].pos[j];
+            drVec[j] = (pos2[j] - pos1[j]);
+        }
+        //Calculate distance between two bodies:
+        
+        real dr2 = mad(drVec[2], drVec[2], mad(drVec[1], drVec[1], drVec[0] * drVec[0])) + EPS2;
+        //real dr2 = (drVec[0] * drVec[0]) + (drVec[1] * drVec[1]) + (drVec[2] * drVec[2]) + EPS2;
+        real dr = sqrt(dr2);
+        real m2 = _gTreeIn[i].mass;
+        real ai = m2/(dr*dr2);
+
+        _gTreeIn[a].acc[0] += ai * drVec[0];
+        _gTreeIn[a].acc[1] += ai * drVec[1];
+        _gTreeIn[a].acc[2] += ai * drVec[2];
+      }
+    }
+  }
+}
+
+
+//__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
@@ -1563,7 +1270,7 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
 
 }
 
-__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+//__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
 
@@ -1588,7 +1295,7 @@ __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
   }
 }
 
-__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+//__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);

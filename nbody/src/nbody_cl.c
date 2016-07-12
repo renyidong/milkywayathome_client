@@ -2251,6 +2251,38 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
     return CL_SUCCESS;
 }
+
+void fillGPUTreeOnlyBodies(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
+{
+  for(int i = 0; i < st->nbody; ++i){
+    gpT[i].isBody = 1;
+    gpT[i].pos[0] = st->bodytab[i].bodynode.pos.x;
+    gpT[i].pos[1] = st->bodytab[i].bodynode.pos.y;
+    gpT[i].pos[2] = st->bodytab[i].bodynode.pos.z;
+    gpT[i].bodyID = st->bodytab[i].bodynode.bodyID;
+    gpT[i].mass = st->bodytab[i].bodynode.mass;
+    gpT[i].vel[0] = st->bodytab[i].vel.x;
+    gpT[i].vel[1] = st->bodytab[i].vel.y;
+    gpT[i].vel[2] = st->bodytab[i].vel.z;
+    gpT[i].acc[0] = 0;
+    gpT[i].acc[1] = 0;
+    gpT[i].acc[2] = 0;
+  }
+  for(int n = st->nbody; n < st->gpuTreeSize; ++n){
+    gpT[n].isBody = 0;
+    gpT[n].pos[0] = 0;
+    gpT[n].pos[1] = 0;
+    gpT[n].pos[2] = 0;
+    gpT[n].bodyID = -1;
+    gpT[n].mass = 0;
+    gpT[n].vel[0] = 0;
+    gpT[n].vel[1] = 0;
+    gpT[n].vel[2] = 0;
+    gpT[n].acc[0] = 0;
+    gpT[n].acc[1] = 0;
+    gpT[n].acc[2] = 0;
+  }
+}
 void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
     //Create gpu tree array:
     //Fill TreeArray:
@@ -2500,7 +2532,6 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     //FILL GPU VECTOR:
     printf("GPU TREE SIZE: %d\n", st->gpuTreeSize);
-    st->effNBody = st->effNBody - st->tree.cellUsed;
     const Body* b = &st->bodytab[1];
     mwvector a = Pos(b);
     printf(">>>>> %f  <<<<< \n", a.x);
@@ -2510,7 +2541,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));
     gpuTree* gTreeOut = malloc(n*sizeof(gpuTree));
     
-    fillGPUTree(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
+    fillGPUTreeOnlyBodies(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
     
     printf("%i\n", st->tree.cellUsed);
     printf("%i\n", st->effNBody);

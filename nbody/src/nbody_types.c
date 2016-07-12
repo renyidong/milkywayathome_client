@@ -317,7 +317,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
     
     //We make the tree before creating buffers since we need to know how many cells are used:
     NBodyStatus rc = nbMakeTree(ctx, st);
-    st->gpuTreeSize = nbSizeGPUTree(st); //We now can calculate the size required for the GPU buffer
+    st->gpuTreeSize = st->effNBody;//nbSizeGPUTree(st); //We now can calculate the size required for the GPU buffer
     if (nbStatusIsFatal(rc))
         return rc;
                 
