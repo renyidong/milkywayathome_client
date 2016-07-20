@@ -1239,6 +1239,7 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
       }
     }
   }
+  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }
 
 
@@ -1267,7 +1268,7 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
     _gTreeIn[a].vel[1] = vy;
     _gTreeIn[a].vel[2] = vz;
   }
-
+  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
@@ -1293,6 +1294,7 @@ __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
     _gTreeIn[a].pos[2] = pz;
 
   }
+  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
@@ -1307,4 +1309,5 @@ __kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
   }
   _gTreeOut[a].mass = _gTreeIn[a].mass;
   _gTreeOut[a].isBody = _gTreeIn[a].isBody;
+  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }

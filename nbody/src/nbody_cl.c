@@ -1399,13 +1399,13 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (st->usesExact)
     {
         forceKern = kernels->forceCalculationExact;
-        global[0] = 1024;
+        global[0] = ws->global[5];
         local[0] = ws->local[5];
     }
     else
     {
         forceKern = kernels->forceCalculation;
-        global[0] = 1024;
+        global[0] = ws->global[5];
         local[0] = ws->local[5];
     }
     //Run kernel:
@@ -1479,7 +1479,7 @@ static cl_int nbAdvanceHalfVelocity(NBodyState* st, cl_bool updateState)
 
     
     velKern = kernels->advanceHalfVelocity;
-    global[0] = 1024;
+    global[0] = ws->global[5];
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1511,7 +1511,7 @@ static cl_int nbAdvancePosition(NBodyState* st, cl_bool updateState)
 
     
     posKern = kernels->advancePosition;
-    global[0] = 1024;
+    global[0] = ws->global[5];
     local[0] = ws->local[5];
     
     cl_event ev;
@@ -1542,7 +1542,7 @@ static cl_int nbOutputData(NBodyState* st, cl_bool updateState)
     cl_int effNBody = st->effNBody;
     
     dataOut = kernels->outputData;
-    global[0] = 1024;
+    global[0] = ws->global[5];
     //printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
     local[0] = ws->local[5];
     
