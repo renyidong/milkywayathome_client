@@ -408,10 +408,26 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     else
     {
         err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
-        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
     }
 
     return err;
+}
+
+static cl_int nbSetKernelArgumentsOutput(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact){
+  cl_int err = CL_SUCCESS;
+  cl_int zeroVal = 0;
+  if (!exact)
+  {
+      err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+      err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );        
+  }
+  else
+  {
+      err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+      err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
+  }
+
+  return err;
 }
 
 //NOTE: UPDATE TO CURRENT ARGS
@@ -439,7 +455,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
         err |= nbSetKernelArguments(k->forceCalculationExact, st->nbb, exact);
         err |= nbSetKernelArguments(k->advanceHalfVelocity, st->nbb, exact);
         err |= nbSetKernelArguments(k->advancePosition, st->nbb, exact);
-        err |= nbSetKernelArguments(k->outputData, st->nbb, exact);
+        err |= nbSetKernelArgumentsOutput(k->outputData, st->nbb, exact);
         //err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
 

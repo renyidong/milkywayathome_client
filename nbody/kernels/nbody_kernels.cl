@@ -1205,7 +1205,7 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 // }
 
 //ALTERNATE FORCE CALCULATION KERNEL:
-__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
+__kernel void forceCalculationExact(GTPtr _gTreeIn){
   //TODO:
   //ITERATE OVER ALL BODIES AFTER CURRENT BODY, DURING EACH CALCULATION,
   //UPDATE BOTH BODIES ACCELERATIONS. THIS SHOULD PROVIDE A 2X SPEEDUP.
@@ -1244,7 +1244,7 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
 
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
+__kernel void advanceHalfVelocity(GTPtr _gTreeIn)
 {
   int a = get_global_id(0);
   if(_gTreeIn[a].isBody == 1){
@@ -1256,9 +1256,9 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
     real ay = _gTreeIn[a].acc[1];
     real az = _gTreeIn[a].acc[2];
     
-    real dvx = (0.5 * TIMESTEP) * ax;
-    real dvy = (0.5 * TIMESTEP) * ay;
-    real dvz = (0.5 * TIMESTEP) * az;
+    real dvx = (((real)0.5) * TIMESTEP) * ax;
+    real dvy = (((real)0.5) * TIMESTEP) * ay;
+    real dvz = (((real)0.5) * TIMESTEP) * az;
     
     vx += dvx;
     vy += dvy;
@@ -1272,7 +1272,7 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
+__kernel void advancePosition(GTPtr _gTreeIn)
 {
 
   int a = get_global_id(0);

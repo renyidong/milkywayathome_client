@@ -68,7 +68,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 /*offset with ifdefs for opencl*/
                 
                 
-                //This can be moved to GPU
+            
                 drSq += ctx->eps2;   /* use standard softening */
                 drab = mw_sqrt(drSq);
                 phii = Mass(q) / drab;
