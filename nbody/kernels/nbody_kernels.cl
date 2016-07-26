@@ -1098,6 +1098,10 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 }
 #endif /* HAVE_INLINE_PTX */
 
+real clampValue(real v){
+  real clampVal = 10;
+  return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
+}
 
 /*
  * This should be equivalent roughtly to CUDA's __all() with the conditions
@@ -1241,9 +1245,9 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
         accel[2] += ai * drVec[2];
       }
     }
-    _gTreeIn[a].acc[0] = floor(pow((real)10,10) * accel[0])/pow((real)10,10);
-    _gTreeIn[a].acc[1] = floor(pow((real)10,10) * accel[1])/pow((real)10,10);
-    _gTreeIn[a].acc[2] = floor(pow((real)10,10) * accel[2])/pow((real)10,10);
+    _gTreeIn[a].acc[0] = clampValue(accel[0]);
+    _gTreeIn[a].acc[1] = clampValue(accel[1]);
+    _gTreeIn[a].acc[2] = clampValue(accel[2]);
     // _gTreeIn[a].acc[0] = accel[0];
     // _gTreeIn[a].acc[1] = accel[1];
     // _gTreeIn[a].acc[2] = accel[2];
@@ -1274,9 +1278,9 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
     vy += dvy;
     vz += dvz;
 
-    _gTreeIn[a].vel[0] = floor(pow((real)10,10) * vx)/pow((real)10,10);
-    _gTreeIn[a].vel[1] = floor(pow((real)10,10) * vy)/pow((real)10,10);
-    _gTreeIn[a].vel[2] = floor(pow((real)10,10) * vz)/pow((real)10,10);
+    _gTreeIn[a].vel[0] = clampValue(vx);
+    _gTreeIn[a].vel[1] = clampValue(vy);
+    _gTreeIn[a].vel[2] = clampValue(vz);
   //}
 }
 
@@ -1298,9 +1302,9 @@ __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
     py = mad(TIMESTEP, vy, py);
     pz = mad(TIMESTEP, vz, pz);
 
-    _gTreeIn[a].pos[0] = floor(pow((real)10,10) * px)/pow((real)10,10);
-    _gTreeIn[a].pos[1] = floor(pow((real)10,10) * py)/pow((real)10,10);
-    _gTreeIn[a].pos[2] = floor(pow((real)10,10) * pz)/pow((real)10,10);
+    _gTreeIn[a].pos[0] = clampValue(px);
+    _gTreeIn[a].pos[1] = clampValue(py);
+    _gTreeIn[a].pos[2] = clampValue(pz);
 
   }
 }

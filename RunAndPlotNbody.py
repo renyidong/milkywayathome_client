@@ -6,7 +6,7 @@ import sys
 import pylab as lab
 import subprocess
 
-timesteps = 10
+timesteps = 10000
 print "RUNNING GPU SYSTEM:"
 os.system('rm GPUBRUTE.out')
 os.system('rm CPUBRUTE.out')

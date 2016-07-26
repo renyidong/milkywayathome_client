@@ -30,6 +30,11 @@
   #include "blender_visualizer.h"
 #endif
 
+real clampValue(real v){
+  real clampVal = 10;
+  return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
+}
+
 static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
 {
     real frac = (real) st->step / (real) ctx->nStep;
@@ -71,9 +76,9 @@ static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 
     dv = mw_mulvs(a, dtHalf);   /* get velocity increment */
     mw_incaddv(Vel(p), dv);     /* advance v by 1/2 step */
-    Vel(p).x = floor(pow((real)10,10) * Vel(p).x)/pow((real)10,10);
-    Vel(p).y = floor(pow((real)10,10) * Vel(p).y)/pow((real)10,10);
-    Vel(p).z = floor(pow((real)10,10) * Vel(p).z)/pow((real)10,10);
+    Vel(p).x = clampValue(Vel(p).x);
+    Vel(p).y = clampValue(Vel(p).y);;
+    Vel(p).z = clampValue(Vel(p).z);;
 }
 
 /* Advance body position by 1 timestep */
@@ -83,9 +88,9 @@ static inline void bodyAdvancePos(Body* p, const real dt)
 
     dr = mw_mulvs(Vel(p), dt);  /* get position increment */
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
-    Pos(p).x = floor(pow((real)10,10) * Pos(p).x)/pow((real)10,10);
-    Pos(p).y = floor(pow((real)10,10) * Pos(p).y)/pow((real)10,10);
-    Pos(p).z = floor(pow((real)10,10) * Pos(p).z)/pow((real)10,10);
+    Pos(p).x = clampValue(Pos(p).x);
+    Pos(p).y = clampValue(Pos(p).y);
+    Pos(p).z = clampValue(Pos(p).z);
 }
 
 static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
