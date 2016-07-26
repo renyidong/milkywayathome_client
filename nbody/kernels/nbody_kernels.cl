@@ -1099,7 +1099,7 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 #endif /* HAVE_INLINE_PTX */
 
 real clampValue(real v){
-  real clampVal = 10;
+  real clampVal = 11;
   return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
 }
 

@@ -31,7 +31,7 @@
 #endif
 
 real clampValue(real v){
-  real clampVal = 10;
+  real clampVal = 11;
   return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
 }
 
