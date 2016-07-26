@@ -402,12 +402,12 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int zeroVal = 0;
     if (!exact)
     {
-        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
-        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );        
+        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );       
     }
     else
     {
         err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
     }
 
     return err;
@@ -455,7 +455,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
         err |= nbSetKernelArguments(k->forceCalculationExact, st->nbb, exact);
         err |= nbSetKernelArguments(k->advanceHalfVelocity, st->nbb, exact);
         err |= nbSetKernelArguments(k->advancePosition, st->nbb, exact);
-        err |= nbSetKernelArgumentsOutput(k->outputData, st->nbb, exact);
+        err |= nbSetKernelArguments(k->outputData, st->nbb, exact);
         //err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
 
@@ -1415,14 +1415,14 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (st->usesExact)
     {
         forceKern = kernels->forceCalculationExact;
-        global[0] = ws->global[5];
-        local[0] = ws->local[5];
+        global[0] = st->gpuTreeSize;
+        local[0] = 4;
     }
     else
     {
         forceKern = kernels->forceCalculation;
-        global[0] = ws->global[5];
-        local[0] = ws->local[5];
+        global[0] = st->gpuTreeSize;
+        local[0] = 4;
     }
     //Run kernel:
     
@@ -1447,31 +1447,6 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     if (err != CL_SUCCESS)
         return err;
     clWaitForEvents(1, &ev);
-    
-    //ws->timings[5] += waitReleaseEventWithTime(ev);
-    
-    
-    
-    
-    
-    
-    //RUN INTEGRATION KERNEL:
-
-//     if (mw_likely(updateState))
-//     {
-//         err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
-//                                      NULL, &ws->global[6], &ws->local[6],
-//                                      0, NULL, &integrateEv);
-//         if (err != CL_SUCCESS)
-//             return err;
-//     }
-// 
-// 
-//     ws->chunkTimings[5] = ws->timings[5] / (double) nChunk;
-//     if (mw_likely(updateState))
-//     {
-//         ws->timings[6] += waitReleaseEventWithTime(integrateEv);
-//     }
     clFinish(ci->queue);
     return CL_SUCCESS;
 }
@@ -1495,8 +1470,8 @@ static cl_int nbAdvanceHalfVelocity(NBodyState* st, cl_bool updateState)
 
     
     velKern = kernels->advanceHalfVelocity;
-    global[0] = ws->global[5];
-    local[0] = ws->local[5];
+    global[0] = st->gpuTreeSize;
+    local[0] = 4;
     
     cl_event ev;
     err = clEnqueueNDRangeKernel(ci->queue, velKern, 1,
@@ -1527,8 +1502,8 @@ static cl_int nbAdvancePosition(NBodyState* st, cl_bool updateState)
 
     
     posKern = kernels->advancePosition;
-    global[0] = ws->global[5];
-    local[0] = ws->local[5];
+    global[0] = st->gpuTreeSize;
+    local[0] = 4;
     
     cl_event ev;
     err = clEnqueueNDRangeKernel(ci->queue, posKern, 1,
@@ -1558,9 +1533,9 @@ static cl_int nbOutputData(NBodyState* st, cl_bool updateState)
     cl_int effNBody = st->effNBody;
     
     dataOut = kernels->outputData;
-    global[0] = ws->global[5];
+    global[0] = st->gpuTreeSize;
     //printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
-    local[0] = ws->local[5];
+    local[0] = 4;
     
     cl_event ev;
     err = clEnqueueNDRangeKernel(ci->queue, dataOut, 1,
@@ -2270,33 +2245,35 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 
 void fillGPUTreeOnlyBodies(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT)
 {
-  for(int i = 0; i < st->nbody; ++i){
-    gpT[i].isBody = 1;
-    gpT[i].pos[0] = st->bodytab[i].bodynode.pos.x;
-    gpT[i].pos[1] = st->bodytab[i].bodynode.pos.y;
-    gpT[i].pos[2] = st->bodytab[i].bodynode.pos.z;
-    gpT[i].bodyID = st->bodytab[i].bodynode.bodyID;
-    gpT[i].mass = st->bodytab[i].bodynode.mass;
-    gpT[i].vel[0] = st->bodytab[i].vel.x;
-    gpT[i].vel[1] = st->bodytab[i].vel.y;
-    gpT[i].vel[2] = st->bodytab[i].vel.z;
-    gpT[i].acc[0] = 0;
-    gpT[i].acc[1] = 0;
-    gpT[i].acc[2] = 0;
-  }
-  for(int n = st->nbody; n < st->gpuTreeSize; ++n){
-    gpT[n].isBody = 0;
-    gpT[n].pos[0] = 0;
-    gpT[n].pos[1] = 0;
-    gpT[n].pos[2] = 0;
-    gpT[n].bodyID = -1;
-    gpT[n].mass = 0;
-    gpT[n].vel[0] = 0;
-    gpT[n].vel[1] = 0;
-    gpT[n].vel[2] = 0;
-    gpT[n].acc[0] = 0;
-    gpT[n].acc[1] = 0;
-    gpT[n].acc[2] = 0;
+  for(int i = 0; i < st->gpuTreeSize; ++i){
+    if(i < st->nbody){
+      gpT[i].isBody = 1;
+      gpT[i].pos[0] = st->bodytab[i].bodynode.pos.x;
+      gpT[i].pos[1] = st->bodytab[i].bodynode.pos.y;
+      gpT[i].pos[2] = st->bodytab[i].bodynode.pos.z;
+      gpT[i].bodyID = st->bodytab[i].bodynode.bodyID;
+      gpT[i].mass = st->bodytab[i].bodynode.mass;
+      gpT[i].vel[0] = st->bodytab[i].vel.x;
+      gpT[i].vel[1] = st->bodytab[i].vel.y;
+      gpT[i].vel[2] = st->bodytab[i].vel.z;
+      gpT[i].acc[0] = 0;
+      gpT[i].acc[1] = 0;
+      gpT[i].acc[2] = 0;
+    }
+    else{
+      gpT[i].isBody = 0;
+      gpT[i].pos[0] = 0;
+      gpT[i].pos[1] = 0;
+      gpT[i].pos[2] = 0;
+      gpT[i].bodyID = -1;
+      gpT[i].mass = 0;
+      gpT[i].vel[0] = 0;
+      gpT[i].vel[1] = 0;
+      gpT[i].vel[2] = 0;
+      gpT[i].acc[0] = 0;
+      gpT[i].acc[1] = 0;
+      gpT[i].acc[2] = 0;
+    }
   }
 }
 void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
@@ -2429,7 +2406,6 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
                         0, NULL, NULL);
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
-
     //RUN INITIAL ACCELERATION CALCULATION:
     err = nbExecuteForceKernels(st, CL_TRUE);
     if (err != CL_SUCCESS)
@@ -2437,7 +2413,6 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
         mwPerrorCL(err, "Error executing force kernels");
         return NBODY_CL_ERROR;
     }
-
     //Set kernel arguments:
     for(int n = 0; n < ctx->nStep; ++n){
         //RUN ADVANCE VELOCITY
@@ -2447,34 +2422,37 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
           mwPerrorCL(err, "Error executing half velocity kernels");
           return NBODY_CL_ERROR;
       }
+
       err = nbAdvancePosition(st, CL_TRUE);
       if (err != CL_SUCCESS)
       {
           mwPerrorCL(err, "Error executing force kernels");
           return NBODY_CL_ERROR;
       }
+
       err = nbExecuteForceKernels(st, CL_TRUE);
       if (err != CL_SUCCESS)
       {
           mwPerrorCL(err, "Error executing force kernels");
           return NBODY_CL_ERROR;
       }
+
       err = nbAdvanceHalfVelocity(st, CL_TRUE);
       if (err != CL_SUCCESS)
       {
           mwPerrorCL(err, "Error executing half velocity kernels");
           return NBODY_CL_ERROR;
       }
+
       err = nbOutputData(st, CL_TRUE);
       if (err != CL_SUCCESS)
       {
           mwPerrorCL(err, "Error executing data output kernels");
           return NBODY_CL_ERROR;
       }
+
       ++st->step;
     }
-  
-    
     //Read buffer from GPU
     err = clEnqueueReadBuffer(st->ci->queue,
                         st->nbb->output,
@@ -2484,7 +2462,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    printf("DATA CHECK POST: %f\n", gTreeOut[0].mass);
+    printf("DATA CHECK POST: %f\n", gTreeOut[99].mass);
 //     if(gTreeOut[10].isBody){
 //         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
 //         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
@@ -2522,23 +2500,23 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     for(int i = 0; i < n; ++i){
         if(gpuData[i].isBody == 1){
           // printf("BODY ID: %d, ACCELERATION: %f,%f,%f\n", 
-          //   gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
+          // gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
           // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
-          //   gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
+          // gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
           // printf("BODY ID: %d, POSITION: %f,%f,%f\n", 
-          //  gpuData[i].bodyID, gpuData[i].pos[0], gpuData[i].pos[1], gpuData[i].pos[2]);
-            st->bodytab[j].bodynode.pos.x = gpuData[i].pos[0];
-            st->bodytab[j].bodynode.pos.y = gpuData[i].pos[1];
-            st->bodytab[j].bodynode.pos.z = gpuData[i].pos[2];
-            st->bodytab[j].bodynode.bodyID = gpuData[i].bodyID;
-            st->bodytab[j].bodynode.mass = gpuData[i].mass;
-            st->bodytab[j].vel.x = gpuData[i].vel[0];
-            st->bodytab[j].vel.y = gpuData[i].vel[1];
-            st->bodytab[j].vel.z = gpuData[i].vel[2];
-             ++j;
-            if(gpuData[i].bodyID < minimumBID){
-              minimumBID = gpuData[i].bodyID;
-            }
+          // gpuData[i].bodyID, gpuData[i].pos[0], gpuData[i].pos[1], gpuData[i].pos[2]);
+          st->bodytab[j].bodynode.pos.x = gpuData[i].pos[0];
+          st->bodytab[j].bodynode.pos.y = gpuData[i].pos[1];
+          st->bodytab[j].bodynode.pos.z = gpuData[i].pos[2];
+          st->bodytab[j].bodynode.bodyID = gpuData[i].bodyID;
+          st->bodytab[j].bodynode.mass = gpuData[i].mass;
+          st->bodytab[j].vel.x = gpuData[i].vel[0];
+          st->bodytab[j].vel.y = gpuData[i].vel[1];
+          st->bodytab[j].vel.z = gpuData[i].vel[2];
+           ++j;
+          if(gpuData[i].bodyID < minimumBID){
+            minimumBID = gpuData[i].bodyID;
+          }
         }
     }
     printf("MinValue: %d\n", minimumBID);

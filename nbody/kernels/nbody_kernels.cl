@@ -225,6 +225,7 @@ typedef struct
         real yy, yz;
         real zz;
     }quad;
+    
 }gpuTree;
 
 //gpuTree pointer:
@@ -1205,7 +1206,7 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 // }
 
 //ALTERNATE FORCE CALCULATION KERNEL:
-__kernel void forceCalculationExact(GTPtr _gTreeIn){
+__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
   //TODO:
   //ITERATE OVER ALL BODIES AFTER CURRENT BODY, DURING EACH CALCULATION,
   //UPDATE BOTH BODIES ACCELERATIONS. THIS SHOULD PROVIDE A 2X SPEEDUP.
@@ -1214,7 +1215,7 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn){
     for(int i = 0; i < 3; ++i){
       _gTreeIn[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
     }
-    for(int i = 0; i < NBODY; ++i){
+    for(int i = 0; i < EFFNBODY; ++i){
       if(_gTreeIn[i].isBody == 1){
         real pos1[3];
         real pos2[3];
@@ -1244,7 +1245,7 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn){
 
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void advanceHalfVelocity(GTPtr _gTreeIn)
+__kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
   if(_gTreeIn[a].isBody == 1){
@@ -1272,7 +1273,7 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn)
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void advancePosition(GTPtr _gTreeIn)
+__kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
 
   int a = get_global_id(0);
@@ -1301,7 +1302,7 @@ __kernel void advancePosition(GTPtr _gTreeIn)
 __kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
- _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
+  _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
   for(int i = 0; i < 3; ++i){
     _gTreeOut[a].pos[i] = _gTreeIn[a].pos[i];
     _gTreeOut[a].vel[i] = _gTreeIn[a].vel[i];
