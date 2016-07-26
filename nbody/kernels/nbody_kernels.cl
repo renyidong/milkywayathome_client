@@ -1212,10 +1212,12 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
   //UPDATE BOTH BODIES ACCELERATIONS. THIS SHOULD PROVIDE A 2X SPEEDUP.
   int a = (int)get_global_id(0);
   if(_gTreeIn[a].isBody == 1){
+    real accel[3];
     for(int i = 0; i < 3; ++i){
+      accel[i] = 0;
       _gTreeIn[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
     }
-    for(int i = 0; i < EFFNBODY; ++i){
+    for(int i = 0; i < NBODY; ++i){
       if(_gTreeIn[i].isBody == 1){
         real pos1[3];
         real pos2[3];
@@ -1234,13 +1236,18 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
         real m2 = _gTreeIn[i].mass;
         real ai = m2/(dr*dr2);
 
-        _gTreeIn[a].acc[0] += ai * drVec[0];
-        _gTreeIn[a].acc[1] += ai * drVec[1];
-        _gTreeIn[a].acc[2] += ai * drVec[2];
+        accel[0] += ai * drVec[0];
+        accel[1] += ai * drVec[1];
+        accel[2] += ai * drVec[2];
       }
     }
+    _gTreeIn[a].acc[0] = floor(pow((real)10,10) * accel[0])/pow((real)10,10);
+    _gTreeIn[a].acc[1] = floor(pow((real)10,10) * accel[1])/pow((real)10,10);
+    _gTreeIn[a].acc[2] = floor(pow((real)10,10) * accel[2])/pow((real)10,10);
+    // _gTreeIn[a].acc[0] = accel[0];
+    // _gTreeIn[a].acc[1] = accel[1];
+    // _gTreeIn[a].acc[2] = accel[2];
   }
-  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }
 
 
@@ -1248,7 +1255,7 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
 __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
-  if(_gTreeIn[a].isBody == 1){
+  //if(_gTreeIn[a].isBody == 1){
     real vx = _gTreeIn[a].vel[0];
     real vy = _gTreeIn[a].vel[1];
     real vz = _gTreeIn[a].vel[2];
@@ -1256,20 +1263,21 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
     real ax = _gTreeIn[a].acc[0];
     real ay = _gTreeIn[a].acc[1];
     real az = _gTreeIn[a].acc[2];
+
+    real dtHalf = 0.5 * TIMESTEP;
     
-    real dvx = (((real)0.5) * TIMESTEP) * ax;
-    real dvy = (((real)0.5) * TIMESTEP) * ay;
-    real dvz = (((real)0.5) * TIMESTEP) * az;
+    real dvx = dtHalf * ax;
+    real dvy = dtHalf * ay;
+    real dvz = dtHalf * az;
     
     vx += dvx;
     vy += dvy;
     vz += dvz;
 
-    _gTreeIn[a].vel[0] = vx;
-    _gTreeIn[a].vel[1] = vy;
-    _gTreeIn[a].vel[2] = vz;
-  }
-  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+    _gTreeIn[a].vel[0] = floor(pow((real)10,10) * vx)/pow((real)10,10);
+    _gTreeIn[a].vel[1] = floor(pow((real)10,10) * vy)/pow((real)10,10);
+    _gTreeIn[a].vel[2] = floor(pow((real)10,10) * vz)/pow((real)10,10);
+  //}
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
@@ -1290,12 +1298,11 @@ __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
     py = mad(TIMESTEP, vy, py);
     pz = mad(TIMESTEP, vz, pz);
 
-    _gTreeIn[a].pos[0] = px;
-    _gTreeIn[a].pos[1] = py;
-    _gTreeIn[a].pos[2] = pz;
+    _gTreeIn[a].pos[0] = floor(pow((real)10,10) * px)/pow((real)10,10);
+    _gTreeIn[a].pos[1] = floor(pow((real)10,10) * py)/pow((real)10,10);
+    _gTreeIn[a].pos[2] = floor(pow((real)10,10) * pz)/pow((real)10,10);
 
   }
-  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
@@ -1310,5 +1317,4 @@ __kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
   }
   _gTreeOut[a].mass = _gTreeIn[a].mass;
   _gTreeOut[a].isBody = _gTreeIn[a].isBody;
-  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 }

@@ -2414,7 +2414,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
         return NBODY_CL_ERROR;
     }
     //Set kernel arguments:
-    for(int n = 0; n < ctx->nStep; ++n){
+    while(st->step < ctx->nStep){
         //RUN ADVANCE VELOCITY
       err = nbAdvanceHalfVelocity(st, CL_TRUE);
       if (err != CL_SUCCESS)
@@ -2462,7 +2462,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    printf("DATA CHECK POST: %f\n", gTreeOut[99].mass);
+    printf("DATA CHECK POST: %f\n", gTreeOut[0].acc[0]);
 //     if(gTreeOut[10].isBody){
 //         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
 //         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
@@ -2489,7 +2489,7 @@ NBodyStatus nbRunSystemCLBarnesHut(const NBodyCtx* ctx, NBodyState* st, gpuTree*
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
-    //THIS FUNCTION IS tO RUN ONLY ONE STEP OF THE OCL FUNCTION
+    //THIS FUNCTION IS TO RUN ONLY ONE STEP OF THE OCL FUNCTION
     return NBODY_SUCCESS;
 }
 
@@ -2499,8 +2499,8 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     int minimumBID = n;
     for(int i = 0; i < n; ++i){
         if(gpuData[i].isBody == 1){
-          // printf("BODY ID: %d, ACCELERATION: %f,%f,%f\n", 
-          // gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
+          printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
+          gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
           // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
           // gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
           // printf("BODY ID: %d, POSITION: %f,%f,%f\n", 

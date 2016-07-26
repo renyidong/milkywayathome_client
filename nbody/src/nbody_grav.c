@@ -204,6 +204,10 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
         mw_incaddv(a, mw_mulvs(dr, mor3));
     }
 
+    a.x = floor(pow((real)10,10) * a.x)/pow((real)10,10);
+    a.y = floor(pow((real)10,10) * a.y)/pow((real)10,10);
+    a.z = floor(pow((real)10,10) * a.z)/pow((real)10,10);
+
     return a;
 }
 
