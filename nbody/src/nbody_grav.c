@@ -33,6 +33,9 @@
 #endif /* _OPENMP */
 
 
+
+
+
 /*
  * nbodyGravity: Walk the tree starting at the root to do force
  * calculations.
@@ -191,22 +194,26 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     mwvector a = ZERO_VECTOR;
     const real eps2 = ctx->eps2;
 
-    for (i = 0; i < nbody; ++i)
+    for (i = 0; i < 1; ++i)
     {
         const Body* b = &st->bodytab[i];
         mwvector dr = mw_subv(Pos(b), Pos(p));
         real drSq = mw_sqrv(dr) + eps2;
-
+        //real dr2 = (dr.x * dr.x) + (dr.y * dr.y) + (dr.z * dr.z) + eps2;
         real drab = mw_sqrt(drSq);
         real phii = Mass(b) / drab;
         real mor3 = phii / drSq;
 
-        mw_incaddv(a, mw_mulvs(dr, mor3));
+        a.x = dr.x + dr.y;
+        a.y = dr.x + dr.y;
+        a.z = dr.z + dr.y;
+
+        //mw_incaddv(a, mw_mulvs(dr, mor3));
     }
 
-    a.x = floor(pow((real)10,11) * a.x)/pow((real)10,11);
-    a.y = floor(pow((real)10,11) * a.y)/pow((real)10,11);
-    a.z = floor(pow((real)10,11) * a.z)/pow((real)10,11);
+    // a.x = floor(pow((real)10,11) * a.x)/pow((real)10,11);
+    // a.y = floor(pow((real)10,11) * a.y)/pow((real)10,11);
+    // a.z = floor(pow((real)10,11) * a.z)/pow((real)10,11);
 
     return a;
 }

@@ -31,8 +31,8 @@
 #endif
 
 real clampValue(real v){
-  real clampVal = 11;
-  return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
+    real clampVal = 10;
+    return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
 }
 
 static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
@@ -76,9 +76,9 @@ static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 
     dv = mw_mulvs(a, dtHalf);   /* get velocity increment */
     mw_incaddv(Vel(p), dv);     /* advance v by 1/2 step */
-    Vel(p).x = clampValue(Vel(p).x);
-    Vel(p).y = clampValue(Vel(p).y);;
-    Vel(p).z = clampValue(Vel(p).z);;
+    // Vel(p).x = clampValue(Vel(p).x);
+    // Vel(p).y = clampValue(Vel(p).y);;
+    // Vel(p).z = clampValue(Vel(p).z);;
 }
 
 /* Advance body position by 1 timestep */
@@ -88,9 +88,9 @@ static inline void bodyAdvancePos(Body* p, const real dt)
 
     dr = mw_mulvs(Vel(p), dt);  /* get position increment */
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
-    Pos(p).x = clampValue(Pos(p).x);
-    Pos(p).y = clampValue(Pos(p).y);
-    Pos(p).z = clampValue(Pos(p).z);
+    // Pos(p).x = clampValue(Pos(p).x);
+    // Pos(p).y = clampValue(Pos(p).y);
+    // Pos(p).z = clampValue(Pos(p).z);
 }
 
 static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
@@ -133,10 +133,10 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
     NBodyStatus rc;
     const real dt = ctx->timestep;
 
-    advancePosVel(st, st->nbody, dt);
+    //advancePosVel(st, st->nbody, dt);
 
     rc = nbGravMap(ctx, st);
-    advanceVelocities(st, st->nbody, dt);
+    //advanceVelocities(st, st->nbody, dt);
 
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT

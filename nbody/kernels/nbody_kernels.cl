@@ -1098,8 +1098,7 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 }
 #endif /* HAVE_INLINE_PTX */
 
-real clampValue(real v){
-  real clampVal = 11;
+real clampValue(real v, real clampVal){
   return(floor(pow((real)10, clampVal) * v)/pow((real)10, clampVal));
 }
 
@@ -1218,19 +1217,15 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
   if(_gTreeIn[a].isBody == 1){
     real accel[3];
     for(int i = 0; i < 3; ++i){
-      accel[i] = 0;
-      _gTreeIn[a].acc[i] = 0; //Initialize accelerations to zero before we do calculations
+      accel[i] = 0.0;
+      _gTreeIn[a].acc[i] = 0.0; //Initialize accelerations to zero before we do calculations
     }
-    for(int i = 0; i < NBODY; ++i){
+    for(int i = 0; i < 1; ++i){
       if(_gTreeIn[i].isBody == 1){
-        real pos1[3];
-        real pos2[3];
         real drVec[3];
         real compVec[3];
         for(int j = 0; j < 3; ++j){
-            pos1[j] = _gTreeIn[a].pos[j];
-            pos2[j] = _gTreeIn[i].pos[j];
-            drVec[j] = (pos2[j] - pos1[j]);
+          drVec[j] = (_gTreeIn[i].pos[j] - _gTreeIn[a].pos[j]);
         }
         //Calculate distance between two bodies:
         
@@ -1240,17 +1235,23 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
         real m2 = _gTreeIn[i].mass;
         real ai = m2/(dr*dr2);
 
-        accel[0] += ai * drVec[0];
-        accel[1] += ai * drVec[1];
-        accel[2] += ai * drVec[2];
+        //NOTE: There seems to be some sort of floating point error, that appears
+        //in the 15th decimal of precision. Narrow this down to see where it is coming from.
+        accel[0] = drVec[0] + drVec[1];
+        accel[1] = drVec[0] + drVec[1];
+        accel[2] = drVec[0] + drVec[1];
+        // accel[0] += ai * drVec[0];
+        // accel[1] += ai * drVec[1];
+        // accel[2] += ai * drVec[2];
       }
     }
-    _gTreeIn[a].acc[0] = clampValue(accel[0]);
-    _gTreeIn[a].acc[1] = clampValue(accel[1]);
-    _gTreeIn[a].acc[2] = clampValue(accel[2]);
-    // _gTreeIn[a].acc[0] = accel[0];
-    // _gTreeIn[a].acc[1] = accel[1];
-    // _gTreeIn[a].acc[2] = accel[2];
+    // _gTreeIn[a].acc[0] = clampValue(accel[0]);
+    // _gTreeIn[a].acc[1] = clampValue(accel[1]);
+    // _gTreeIn[a].acc[2] = clampValue(accel[2]);
+    
+    _gTreeIn[a].acc[0] = accel[0];
+    _gTreeIn[a].acc[1] = accel[1];
+    _gTreeIn[a].acc[2] = accel[2];
   }
 }
 
@@ -1278,10 +1279,14 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
     vy += dvy;
     vz += dvz;
 
-    _gTreeIn[a].vel[0] = clampValue(vx);
-    _gTreeIn[a].vel[1] = clampValue(vy);
-    _gTreeIn[a].vel[2] = clampValue(vz);
-  //}
+    // _gTreeIn[a].vel[0] = clampValue(vx);
+    // _gTreeIn[a].vel[1] = clampValue(vy);
+    // _gTreeIn[a].vel[2] = clampValue(vz);
+
+    _gTreeIn[a].vel[0] = vx;
+    _gTreeIn[a].vel[1] = vy;
+    _gTreeIn[a].vel[2] = vz;
+    //}
 }
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
@@ -1302,9 +1307,12 @@ __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
     py = mad(TIMESTEP, vy, py);
     pz = mad(TIMESTEP, vz, pz);
 
-    _gTreeIn[a].pos[0] = clampValue(px);
-    _gTreeIn[a].pos[1] = clampValue(py);
-    _gTreeIn[a].pos[2] = clampValue(pz);
+    // _gTreeIn[a].pos[0] = clampValue(px);
+    // _gTreeIn[a].pos[1] = clampValue(py);
+    // _gTreeIn[a].pos[2] = clampValue(pz);
+    _gTreeIn[a].pos[0] = px;
+    _gTreeIn[a].pos[1] = py;
+    _gTreeIn[a].pos[2] = pz;
 
   }
 }

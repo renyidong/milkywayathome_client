@@ -232,6 +232,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     ws->threads[6] = 64;
     ws->threads[7] = 64;
 
+
     if (di->devType == CL_DEVICE_TYPE_CPU)
     {
         ws->threads[0] = 1;
@@ -270,6 +271,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     }
     else if (mwMinComputeCapabilityCheck(di, 2, 0))
     {
+      printf("WE'RE RUNNING<<<<\n");
         ws->factors[0] = 1;
         ws->factors[1] = 1;
         ws->factors[2] = 1;
@@ -279,11 +281,11 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->factors[6] = 4;
         ws->factors[7] = 4;
 
-        ws->threads[0] = 1024;
-        ws->threads[1] = 1024;
-        ws->threads[2] = 1024;
-        ws->threads[3] = 1024;
-        ws->threads[4] = 1024;
+        ws->threads[0] = 32;
+        ws->threads[1] = 64;
+        ws->threads[2] = 128;
+        ws->threads[3] = 256;
+        ws->threads[4] = 512;
 
         /* It's faster to restrain the used number of registers and
          * get a larger workgroup size, but when using quadrupole
@@ -530,7 +532,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                #if !DOUBLEPREC
                  "-cl-single-precision-constant "
                #endif
-                 "-cl-mad-enable "
+                 //"-cl-mad-enable "
+                 "-cl-opt-disable "
 
                  "-DNBODY=%d "
                  "-DEFFNBODY=%d "
@@ -2398,7 +2401,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     int buffSize = st->gpuTreeSize;
     printf("Buffer Size: %d\n", buffSize);
     //TODO: Figure out why buffer isn't being used by GPU
-    printf("DATA CHECK INITIAL: %f\n", gTreeIn[0].mass);
+    printf("DATA CHECK INITIAL: %.15f\n", gTreeIn[0].mass);
     err = clEnqueueWriteBuffer(st->ci->queue,
                         st->nbb->input,
                         CL_TRUE,
@@ -2416,19 +2419,19 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     //Set kernel arguments:
     while(st->step < ctx->nStep){
         //RUN ADVANCE VELOCITY
-      err = nbAdvanceHalfVelocity(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing half velocity kernels");
-          return NBODY_CL_ERROR;
-      }
+      // err = nbAdvanceHalfVelocity(st, CL_TRUE);
+      // if (err != CL_SUCCESS)
+      // {
+      //     mwPerrorCL(err, "Error executing half velocity kernels");
+      //     return NBODY_CL_ERROR;
+      // }
 
-      err = nbAdvancePosition(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing force kernels");
-          return NBODY_CL_ERROR;
-      }
+      // err = nbAdvancePosition(st, CL_TRUE);
+      // if (err != CL_SUCCESS)
+      // {
+      //     mwPerrorCL(err, "Error executing force kernels");
+      //     return NBODY_CL_ERROR;
+      // }
 
       err = nbExecuteForceKernels(st, CL_TRUE);
       if (err != CL_SUCCESS)
@@ -2437,12 +2440,12 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
           return NBODY_CL_ERROR;
       }
 
-      err = nbAdvanceHalfVelocity(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing half velocity kernels");
-          return NBODY_CL_ERROR;
-      }
+      // err = nbAdvanceHalfVelocity(st, CL_TRUE);
+      // if (err != CL_SUCCESS)
+      // {
+      //     mwPerrorCL(err, "Error executing half velocity kernels");
+      //     return NBODY_CL_ERROR;
+      // }
 
       err = nbOutputData(st, CL_TRUE);
       if (err != CL_SUCCESS)
@@ -2462,7 +2465,7 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
-    printf("DATA CHECK POST: %f\n", gTreeOut[0].acc[0]);
+    printf("DATA CHECK POST: %.15f\n", gTreeOut[0].mass);
 //     if(gTreeOut[10].isBody){
 //         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
 //         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
