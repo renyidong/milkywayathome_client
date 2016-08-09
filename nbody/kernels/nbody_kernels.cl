@@ -1207,9 +1207,8 @@ __kernel void forceCalculation(GTPtr _gTreeIn, GTPtr _gTreeOut)
 //     barrier(CLK_GLOBAL_MEM_FENCE);
 // //=========================================
 // }
-
 //ALTERNATE FORCE CALCULATION KERNEL:
-__kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
+__kernel void forceCalculationExactOld(GTPtr _gTreeIn, GTPtr _gTreeOut){
   //TODO:
   //ITERATE OVER ALL BODIES AFTER CURRENT BODY, DURING EACH CALCULATION,
   //UPDATE BOTH BODIES ACCELERATIONS. THIS SHOULD PROVIDE A 2X SPEEDUP.
@@ -1255,9 +1254,34 @@ __kernel void forceCalculationExact(GTPtr _gTreeIn, GTPtr _gTreeOut){
   }
 }
 
+//SoA FORCE CALCULATION KERNEL:
+__kernel void forceCalculationExact(RVPtr x, RVPtr y, RVPtr z,
+                                    RVPtr vx, RVPtr vy, RVPtr vz,
+                                    RVPtr ax, RVPtr ay, RVPtr az,
+                                    RVPtr mass){
+  int a = (int)get_global_id(0);
+  ax[a] = 0;
+  ay[a] = 0;
+  az[a] = 0;
+  for(int i = 0; i < EFFNBODY; ++i){
+    real drVec[3] = {0,0,0};
+    drVec[0] = x[i] - x[a];
+    drVec[1] = y[i] - y[a];
+    drVec[2] = z[i] - z[a];
+    real dr2 = mad(drVec[2], drVec[2], mad(drVec[1], drVec[1], mad(drVec[0], drVec[0],EPS2)));
+    real dr = sqrt(dr2);
+    real m2 = mass[i];
+    real ai = m2/(dr*dr2);
+    ax[a] += ai * drVec[0];
+    ay[a] += ai * drVec[1];
+    az[a] += ai * drVec[2];
+
+  }
+
+}
 
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
+__kernel void advanceHalfVelocityOld(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
   //if(_gTreeIn[a].isBody == 1){
@@ -1289,8 +1313,20 @@ __kernel void advanceHalfVelocity(GTPtr _gTreeIn, GTPtr _gTreeOut)
     //}
 }
 
+__kernel void advanceHalfVelocity(RVPtr x, RVPtr y, RVPtr z,
+                                    RVPtr vx, RVPtr vy, RVPtr vz,
+                                    RVPtr ax, RVPtr ay, RVPtr az,
+                                    RVPtr mass){
+  int a = get_global_id(0);
+  real dtHalf = 0.5 * TIMESTEP;
+
+  vx[a] = mad(dtHalf, ax[a], vx[a]);
+  vy[a] = mad(dtHalf, ay[a], vy[a]);
+  vz[a] = mad(dtHalf, az[a], vz[a]);
+}
+
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
+__kernel void advancePositionOld(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
 
   int a = get_global_id(0);
@@ -1317,8 +1353,21 @@ __kernel void advancePosition(GTPtr _gTreeIn, GTPtr _gTreeOut)
   }
 }
 
+__kernel void advancePosition(RVPtr x, RVPtr y, RVPtr z,
+                              RVPtr vx, RVPtr vy, RVPtr vz,
+                              RVPtr ax, RVPtr ay, RVPtr az,
+                              RVPtr mass){
+  int a = get_global_id(0);
+  // x[a] = 10;
+  // y[a] = 10;
+  // z[a] = 10;
+  x[a] = mad(TIMESTEP, vx[a], x[a]);
+  y[a] = mad(TIMESTEP, vy[a], y[a]);
+  z[a] = mad(TIMESTEP, vz[a], z[a]);
+}
+
 //__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
+__kernel void outputDataOld(GTPtr _gTreeIn, GTPtr _gTreeOut)
 {
   int a = get_global_id(0);
   _gTreeOut[a].bodyID = _gTreeIn[a].bodyID;
@@ -1329,4 +1378,12 @@ __kernel void outputData(GTPtr _gTreeIn, GTPtr _gTreeOut)
   }
   _gTreeOut[a].mass = _gTreeIn[a].mass;
   _gTreeOut[a].isBody = _gTreeIn[a].isBody;
+}
+
+__kernel void outputData(RVPtr x, RVPtr y, RVPtr z,
+                        RVPtr vx, RVPtr vy, RVPtr vz,
+                        RVPtr ax, RVPtr ay, RVPtr az,
+                        RVPtr mass){
+  int a = get_global_id(0);
+
 }

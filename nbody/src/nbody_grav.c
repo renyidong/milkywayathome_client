@@ -194,7 +194,7 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     mwvector a = ZERO_VECTOR;
     const real eps2 = ctx->eps2;
 
-    for (i = 0; i < 1; ++i)
+    for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
         mwvector dr = mw_subv(Pos(b), Pos(p));
@@ -204,11 +204,11 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
         real phii = Mass(b) / drab;
         real mor3 = phii / drSq;
 
-        a.x = dr.x + dr.y;
-        a.y = dr.x + dr.y;
-        a.z = dr.z + dr.y;
+        // a.x = dr.x + dr.y;
+        // a.y = dr.x + dr.y;
+        // a.z = dr.z + dr.y;
 
-        //mw_incaddv(a, mw_mulvs(dr, mor3));
+        mw_incaddv(a, mw_mulvs(dr, mor3));
     }
 
     // a.x = floor(pow((real)10,11) * a.x)/pow((real)10,11);

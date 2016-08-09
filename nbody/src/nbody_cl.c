@@ -404,33 +404,41 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int zeroVal = 0;
     if (!exact)
     {
-        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );       
+        //err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );       
     }
     else
     {
-        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
-        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
+        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->x) );
+        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->y) );
+        err = clSetKernelArg(kern, 2, sizeof(cl_mem), &(nbb->z) );
+        err = clSetKernelArg(kern, 3, sizeof(cl_mem), &(nbb->vx) );
+        err = clSetKernelArg(kern, 4, sizeof(cl_mem), &(nbb->vy) );
+        err = clSetKernelArg(kern, 5, sizeof(cl_mem), &(nbb->vz) );
+        err = clSetKernelArg(kern, 6, sizeof(cl_mem), &(nbb->ax) );
+        err = clSetKernelArg(kern, 7, sizeof(cl_mem), &(nbb->ay) );
+        err = clSetKernelArg(kern, 8, sizeof(cl_mem), &(nbb->az) );
+        err = clSetKernelArg(kern, 9, sizeof(cl_mem), &(nbb->mass) );
     }
 
     return err;
 }
 
-static cl_int nbSetKernelArgumentsOutput(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact){
-  cl_int err = CL_SUCCESS;
-  cl_int zeroVal = 0;
-  if (!exact)
-  {
-      err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
-      err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );        
-  }
-  else
-  {
-      err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
-      err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
-  }
+// static cl_int nbSetKernelArgumentsOutput(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact){
+//   cl_int err = CL_SUCCESS;
+//   cl_int zeroVal = 0;
+//   if (!exact)
+//   {
+//       err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+//       err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );        
+//   }
+//   else
+//   {
+//       err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );
+//       err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->output) );
+//   }
 
-  return err;
-}
+//   return err;
+// }
 
 //NOTE: UPDATE TO CURRENT ARGS
 cl_int nbSetAllKernelArguments(NBodyState* st)
@@ -457,7 +465,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
         err |= nbSetKernelArguments(k->forceCalculationExact, st->nbb, exact);
         err |= nbSetKernelArguments(k->advanceHalfVelocity, st->nbb, exact);
         err |= nbSetKernelArguments(k->advancePosition, st->nbb, exact);
-        err |= nbSetKernelArguments(k->outputData, st->nbb, exact);
+        // err |= nbSetKernelArguments(k->outputData, st->nbb, exact);
         //err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
 
@@ -532,8 +540,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                #if !DOUBLEPREC
                  "-cl-single-precision-constant "
                #endif
-                 //"-cl-mad-enable "
-                 "-cl-opt-disable "
+                 "-cl-mad-enable "
+                 //"-cl-opt-disable "
 
                  "-DNBODY=%d "
                  "-DEFFNBODY=%d "
@@ -1689,8 +1697,16 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
         return CL_SUCCESS;
     }
 
-    err |= clReleaseMemObject_quiet(nbb->input);
-    err |= clReleaseMemObject_quiet(nbb->output);
+    err |= clReleaseMemObject_quiet(nbb->x);
+    err |= clReleaseMemObject_quiet(nbb->y);
+    err |= clReleaseMemObject_quiet(nbb->z);
+    err |= clReleaseMemObject_quiet(nbb->vx);
+    err |= clReleaseMemObject_quiet(nbb->vy);
+    err |= clReleaseMemObject_quiet(nbb->vz);
+    err |= clReleaseMemObject_quiet(nbb->ax);
+    err |= clReleaseMemObject_quiet(nbb->ay);
+    err |= clReleaseMemObject_quiet(nbb->az);
+    err |= clReleaseMemObject_quiet(nbb->mass);
 
     if (err != CL_SUCCESS)
     {
@@ -1776,12 +1792,22 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     size_t massSize;
     cl_int err;
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
-    int buffSize = st->gpuTreeSize;
-    printf("Buffer Size: %d\n", buffSize);
+    int n = st->effNBody;
+    printf("Buffer Size: %d\n", n);
+    st->nbb->x = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->y = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->z = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->vx = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->vy = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->vz = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->ax = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->ay = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->az = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    st->nbb->mass = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
     // st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
     // st->nbb->output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
-    st->nbb->input = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree));
-    st->nbb->output = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree));
+    // st->nbb->input = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree));
+    // st->nbb->output = mwCreateZeroReadWriteBuffer(ci, buffSize*sizeof(gpuTree));
     //const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
     // for (i = 0; i < 3; ++i)
     // {
@@ -2385,6 +2411,229 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
     }
 }
 
+void initGPUDataArrays(NBodyState* st, gpuData* gData){
+  int n = st->effNBody;
+  gData->x = calloc(n, sizeof(real));
+  gData->y = calloc(n, sizeof(real));
+  gData->z = calloc(n, sizeof(real));
+  gData->vx = calloc(n, sizeof(real));
+  gData->vy = calloc(n, sizeof(real));
+  gData->vz = calloc(n, sizeof(real));
+  gData->ax = calloc(n, sizeof(real));
+  gData->ay = calloc(n, sizeof(real));
+  gData->az = calloc(n, sizeof(real));
+  gData->mass = calloc(n, sizeof(real));
+}
+
+void fillGPUDataOnlyBodies(NBodyState* st, gpuData* gData){
+  int n = st->effNBody;
+  for(int i = 0; i < n; ++i){
+    if(i < st->nbody){
+      gData->x[i] = st->bodytab[i].bodynode.pos.x;
+      gData->y[i] = st->bodytab[i].bodynode.pos.y;
+      gData->z[i] = st->bodytab[i].bodynode.pos.z;
+      gData->mass[i] = st->bodytab[i].bodynode.mass;
+      gData->vx[i] = st->bodytab[i].vel.x;
+      gData->vy[i] = st->bodytab[i].vel.y;
+      gData->vz[i] = st->bodytab[i].vel.z;
+      gData->ax[i] = 0;
+      gData->ay[i] = 0;
+      gData->az[i] = 0;
+    }
+    else{
+      gData->x[i] = 0;
+      gData->y[i] = 0;
+      gData->z[i] = 0;
+      gData->mass[i] = 0;
+      gData->vx[i] = 0;
+      gData->vy[i] = 0;
+      gData->vz[i] = 0; 
+      gData->ax[i] = 0;
+      gData->ay[i] = 0;
+      gData->az[i] = 0;
+    }
+  }
+}
+
+void writeGPUBuffers(NBodyState* st, gpuData* gData){
+  printf("WRITING TO GPU BUFFERS\n");
+  CLInfo* ci = st->ci;   
+  cl_int err = CL_SUCCESS;
+  cl_uint i;
+  cl_command_queue q = st->ci->queue;
+  int n = st->effNBody;
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->x,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->x,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->y,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->y,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->z,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->z,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->vx,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->vx,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->vy,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->vy,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->vz,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->vz,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->ax,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->ax,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->ay,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->ay,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->az,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->az,
+                        0, NULL, NULL);
+  err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->mass,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->mass,
+                        0, NULL, NULL);
+  if(err != CL_SUCCESS)
+        printf("%i, ERROR WRITING TO OPENCL BUFFERS \n", err);
+
+  clFlush(st->ci->queue);
+}
+
+void readGPUBuffers(NBodyState* st, gpuData* gData){
+  printf("READING FROM GPU BUFFERS\n");
+  CLInfo* ci = st->ci;   
+  cl_int err = CL_SUCCESS;
+  cl_uint i;
+  cl_command_queue q = st->ci->queue;
+  int n = st->effNBody;
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->x,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->x,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->y,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->y,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->z,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->z,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->vx,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->vx,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->vy,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->vy,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->vz,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->vz,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->ax,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->ax,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->ay,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->ay,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->az,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->az,
+                        0, NULL, NULL);
+  err |= clEnqueueReadBuffer(st->ci->queue,
+                        st->nbb->mass,
+                        CL_TRUE,
+                        0, n*sizeof(real), gData->mass,
+                        0, NULL, NULL);
+  if(err != CL_SUCCESS)
+        printf("%i, ERROR READING FROM OPENCL BUFFERS \n", err);
+
+  clFlush(st->ci->queue);
+}
+
+NBodyStatus nbRunSystemCLAlternate(const NBodyCtx* ctx, NBodyState* st){
+  printf("RUNNING ALTERNATE OPENCL EXACT APPLICATION\n");
+  CLInfo* ci = st->ci;   
+  cl_int err;
+  cl_uint i;
+  cl_command_queue q = st->ci->queue;
+  gpuData gData;
+  initGPUDataArrays(st, &gData);
+  fillGPUDataOnlyBodies(st, &gData);
+  int n = st->effNBody;
+  writeGPUBuffers(st, &gData);
+
+  printf("BEGINNING EXECUTION OF GPU NBODY\n");
+  err = nbExecuteForceKernels(st, CL_TRUE);
+  if (err != CL_SUCCESS)
+  {
+      mwPerrorCL(err, "Error executing force kernels");
+      return NBODY_CL_ERROR;
+  }
+  while(st->step < ctx->nStep){
+    err = nbAdvanceHalfVelocity(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing half velocity kernel");
+        return NBODY_CL_ERROR;
+    }
+    err = nbAdvancePosition(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing advance position kernel");
+        return NBODY_CL_ERROR;
+    }
+    err = nbExecuteForceKernels(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing advance position kernel");
+        return NBODY_CL_ERROR;
+    }
+    err = nbAdvanceHalfVelocity(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing half velocity kernel");
+        return NBODY_CL_ERROR;
+    }
+    ++st->step;
+  }
+  readGPUBuffers(st, &gData);
+  nbStripBodiesSoA(st, &gData);
+  NBodyStatus rc = nbMakeTree(ctx, st);
+    if (nbStatusIsFatal(rc))
+        return rc;
+}
+
 NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
 {
     
@@ -2402,11 +2651,11 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     printf("Buffer Size: %d\n", buffSize);
     //TODO: Figure out why buffer isn't being used by GPU
     printf("DATA CHECK INITIAL: %.15f\n", gTreeIn[0].mass);
-    err = clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->input,
-                        CL_TRUE,
-                        0, buffSize*sizeof(gpuTree), gTreeIn,
-                        0, NULL, NULL);
+    // err = clEnqueueWriteBuffer(st->ci->queue,
+    //                     st->nbb->input,
+    //                     CL_TRUE,
+    //                     0, buffSize*sizeof(gpuTree), gTreeIn,
+    //                     0, NULL, NULL);
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     //RUN INITIAL ACCELERATION CALCULATION:
@@ -2419,12 +2668,12 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
     //Set kernel arguments:
     while(st->step < ctx->nStep){
         //RUN ADVANCE VELOCITY
-      // err = nbAdvanceHalfVelocity(st, CL_TRUE);
-      // if (err != CL_SUCCESS)
-      // {
-      //     mwPerrorCL(err, "Error executing half velocity kernels");
-      //     return NBODY_CL_ERROR;
-      // }
+      err = nbAdvanceHalfVelocity(st, CL_TRUE);
+      if (err != CL_SUCCESS)
+      {
+          mwPerrorCL(err, "Error executing half velocity kernels");
+          return NBODY_CL_ERROR;
+      }
 
       // err = nbAdvancePosition(st, CL_TRUE);
       // if (err != CL_SUCCESS)
@@ -2457,11 +2706,11 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTr
       ++st->step;
     }
     //Read buffer from GPU
-    err = clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->output,
-                        CL_TRUE,
-                        0, buffSize*sizeof(gpuTree), gTreeOut,
-                        0, NULL, NULL);
+    // err = clEnqueueReadBuffer(st->ci->queue,
+    //                     st->nbb->output,
+    //                     CL_TRUE,
+    //                     0, buffSize*sizeof(gpuTree), gTreeOut,
+    //                     0, NULL, NULL);
     if(err != CL_SUCCESS)
         printf("%i, OH SHIT\n", err);
     
@@ -2502,8 +2751,8 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     int minimumBID = n;
     for(int i = 0; i < n; ++i){
         if(gpuData[i].isBody == 1){
-          printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
-          gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
+          // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
+          // gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
           // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
           // gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
           // printf("BODY ID: %d, POSITION: %f,%f,%f\n", 
@@ -2523,6 +2772,38 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
         }
     }
     printf("MinValue: %d\n", minimumBID);
+}
+
+NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to strip bodies out of GPU Tree
+  printf("STRIPPING BODIES FROM BUFFER STRUCTURE\n");
+  int n = st->nbody;
+  int minimumBID = n;
+  for(int i = 0; i < n; ++i){
+    // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
+    //   i, gData->ax[i], gData->ay[i], gData->az[i]);
+    // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
+    //   i, gData->vx[i], gData->vy[i], gData->vz[i]);
+    printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
+      i, gData->x[i], gData->y[i], gData->z[i]);
+    // printf("BODY ID: %d, MASS: %.15f\n", 
+    //   i, gData->mass[i]);
+    // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
+    // gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
+    // printf("BODY ID: %d, POSITION: %f,%f,%f\n", 
+    // gpuData[i].bodyID, gpuData[i].pos[0], gpuData[i].pos[1], gpuData[i].pos[2]);
+    st->bodytab[i].bodynode.pos.x = gData->x[i];
+    st->bodytab[i].bodynode.pos.y = gData->y[i];
+    st->bodytab[i].bodynode.pos.z = gData->z[i];
+
+    st->bodytab[i].bodynode.bodyID = i;
+    st->bodytab[i].vel.x = gData->vx[0];
+    st->bodytab[i].vel.y = gData->vy[1];
+    st->bodytab[i].vel.z = gData->vz[2];
+
+    st->bodytab[i].bodynode.mass = gData->mass[i];
+
+  }
+  printf("MinValue: %d\n", minimumBID);
 }
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
@@ -2548,7 +2829,8 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     ////////////////////
     
     //RUN BRUTE FORCE SYSTEM:
-    nbRunSystemCLExact(ctx, st, gTreeIn, gTreeOut);
+    //nbRunSystemCLExact(ctx, st, gTreeIn, gTreeOut);
+    nbRunSystemCLAlternate(ctx, st);
     //RUN BARNES-HUT SYSTEM:
     //nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
     

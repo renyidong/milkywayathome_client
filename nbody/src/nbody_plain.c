@@ -133,10 +133,10 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
     NBodyStatus rc;
     const real dt = ctx->timestep;
 
-    //advancePosVel(st, st->nbody, dt);
+    advancePosVel(st, st->nbody, dt);
 
     rc = nbGravMap(ctx, st);
-    //advanceVelocities(st, st->nbody, dt);
+    advanceVelocities(st, st->nbody, dt);
 
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT
@@ -175,7 +175,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
         #endif
         rc |= nbStepSystemPlain(ctx, st);
-        if (nbStatusIsFatal(rc))   /* advance N-body system */
+        //ADVANCE NBODY SYSTEM
+        if (nbStatusIsFatal(rc))    
             return rc;
 
         rc |= nbCheckpoint(ctx, st);
@@ -189,8 +190,14 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
     }
 
     for(int i = 0; i < st->nbody; ++i){
-         printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
-         st->bodytab[i].bodynode.bodyID, st->acctab[i].x, st->acctab[i].y, st->acctab[i].z);
+        // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
+        //  st->bodytab[i].bodynode.bodyID, st->acctab[i].x, st->acctab[i].y, st->acctab[i].z);
+        // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
+        //  st->bodytab[i].bodynode.bodyID, st->bodytab[i].vel.x, st->bodytab[i].vel.y, st->bodytab[i].vel.z);
+        printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
+         st->bodytab[i].bodynode.bodyID, st->bodytab[i].bodynode.pos.x, st->bodytab[i].bodynode.pos.y, st->bodytab[i].bodynode.pos.z);
+        //printf("BODY ID: %d, MASS: %.15f\n", 
+        // st->bodytab[i].bodynode.bodyID, st->bodytab[i].bodynode.mass);
 
     }   
     #ifdef NBODY_BLENDER_OUTPUT

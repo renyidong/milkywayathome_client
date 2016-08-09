@@ -197,12 +197,27 @@ typedef struct MW_ALIGN_TYPE
 
 #if NBODY_OPENCL
 
-typedef struct
-{
-    cl_mem input;
-    cl_mem output;  
-} NBodyBuffers;
+// typedef struct
+// {
+//     cl_mem input;
+//     cl_mem output;  
+// } NBodyBuffers;
 
+typedef struct{
+    cl_mem x;
+    cl_mem y;
+    cl_mem z;
+
+    cl_mem vx;
+    cl_mem vy;
+    cl_mem vz;
+
+    cl_mem ax;
+    cl_mem ay;
+    cl_mem az;
+
+    cl_mem mass;
+}NBodyBuffers;
 
 typedef struct
 {
@@ -302,6 +317,24 @@ typedef struct
     
    
 }gpuTree;
+
+typedef struct
+{
+    real* x;
+    real* y;
+    real* z;
+
+    real* vx;
+    real* vy;
+    real* vz;
+
+    real* ax;
+    real* ay;
+    real* az;
+
+    real* mass;
+
+}gpuData;
 
 typedef struct
 {
