@@ -1389,10 +1389,46 @@ __kernel void outputData(RVPtr x, RVPtr y, RVPtr z,
 ////////////////////////////////////
 // GPU TREECODE 
 ////////////////////////////////////
-
 __kernel void boundingBox(RVPtr x, RVPtr y, RVPtr z,
                         RVPtr vx, RVPtr vy, RVPtr vz,
                         RVPtr ax, RVPtr ay, RVPtr az,
-                        RVPtr mass){
+                        RVPtr mass, RVPtr xMax, RVPtr yMax,
+                        RVPtr zMax, RVPtr xMin, RVPtr yMin,
+                        RVPtr zMin){
   int a = get_global_id(0);
+  if(a == 0){
+    *xMin = INFINITY;
+    *yMin = INFINITY;
+    *zMin = INFINITY;
+    *xMax = -INFINITY;
+    *yMax = -INFINITY;
+    *zMax = -INFINITY;
+  }
+  if(x[a] > *xMax){
+    *xMax = x[a];
+  }
+  if(x[a] < *xMax){
+    *xMin = x[a];
+  }
+
+  if(y[a] > *yMax){
+    *yMax = y[a];
+  }
+  if(y[a] < *yMax){
+    *yMin = y[a];
+  }
+
+  if(z[a] > *xMax){
+    *zMax = z[a];
+  }
+  if(z[a] < *zMax){
+    *zMin = z[a];
+  }
+  *xMin = -10;
+  *yMin = -10;
+  *zMin = -10;
+  *xMax = 10;
+  *yMax = 10;
+  *zMax = 10;
+
 }

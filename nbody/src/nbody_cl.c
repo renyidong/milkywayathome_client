@@ -404,19 +404,18 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int zeroVal = 0;
     if (!exact)
     {
-        //err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->input) );       
+        err = nbSetMemArrayArgs(kern, nbb->pos, 0);
+        err = nbSetMemArrayArgs(kern, nbb->vel, 3);
+        err = nbSetMemArrayArgs(kern, nbb->acc, 6);
+        err = clSetKernelArg(kern, 9, sizeof(cl_mem), &(nbb->mass) );
+        err = nbSetMemArrayArgs(kern, nbb->max, 10);
+        err = nbSetMemArrayArgs(kern, nbb->min, 13); 
     }
     else
     {
-        err = clSetKernelArg(kern, 0, sizeof(cl_mem), &(nbb->x) );
-        err = clSetKernelArg(kern, 1, sizeof(cl_mem), &(nbb->y) );
-        err = clSetKernelArg(kern, 2, sizeof(cl_mem), &(nbb->z) );
-        err = clSetKernelArg(kern, 3, sizeof(cl_mem), &(nbb->vx) );
-        err = clSetKernelArg(kern, 4, sizeof(cl_mem), &(nbb->vy) );
-        err = clSetKernelArg(kern, 5, sizeof(cl_mem), &(nbb->vz) );
-        err = clSetKernelArg(kern, 6, sizeof(cl_mem), &(nbb->ax) );
-        err = clSetKernelArg(kern, 7, sizeof(cl_mem), &(nbb->ay) );
-        err = clSetKernelArg(kern, 8, sizeof(cl_mem), &(nbb->az) );
+        err = nbSetMemArrayArgs(kern, nbb->pos, 0);
+        err = nbSetMemArrayArgs(kern, nbb->vel, 3);
+        err = nbSetMemArrayArgs(kern, nbb->acc, 6);
         err = clSetKernelArg(kern, 9, sizeof(cl_mem), &(nbb->mass) );
     }
 
@@ -449,14 +448,14 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 
     if (!exact)
     {
-//         err |= nbSetKernelArguments(k->boundingBox, st->nbb, exact);
+        err |= nbSetKernelArguments(k->boundingBox, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->buildTreeClear, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->buildTree, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->summarizationClear, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->sort, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->quadMoments, st->nbb, exact);
-      err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
+//         err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
 //         err |= nbSetKernelArguments(k->integration, st->nbb, exact);
     }
     else
@@ -489,7 +488,7 @@ cl_int nbReleaseKernels(NBodyState* st)
     cl_int err = CL_SUCCESS;
     NBodyKernels* kernels = st->kernels;
 
-//     err |= clReleaseKernel_quiet(kernels->boundingBox);
+    err |= clReleaseKernel_quiet(kernels->boundingBox);
 //     err |= clReleaseKernel_quiet(kernels->buildTreeClear);
 //     err |= clReleaseKernel_quiet(kernels->buildTree);
 //     err |= clReleaseKernel_quiet(kernels->summarizationClear);
@@ -685,7 +684,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
 //    kernels->testAddition = mwCreateKernel(program, "testAddition");
-//     kernels->boundingBox = mwCreateKernel(program, "boundingBox");
+    kernels->boundingBox = mwCreateKernel(program, "boundingBox");
 //     kernels->buildTreeClear = mwCreateKernel(program, "buildTreeClear");
 //     kernels->buildTree = mwCreateKernel(program, "buildTree");
 //     kernels->summarizationClear = mwCreateKernel(program, "summarizationClear");
@@ -703,7 +702,8 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
             &&  kernels->forceCalculationExact
             &&  kernels->advanceHalfVelocity
             &&  kernels->advancePosition
-            &&  kernels->outputData);
+            &&  kernels->outputData
+            &&  kernels->boundingBox);
 //     return (   kernels->boundingBox
 //             && kernels->buildTreeClear
 //             && kernels->buildTree
@@ -1697,15 +1697,14 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
         return CL_SUCCESS;
     }
 
-    err |= clReleaseMemObject_quiet(nbb->x);
-    err |= clReleaseMemObject_quiet(nbb->y);
-    err |= clReleaseMemObject_quiet(nbb->z);
-    err |= clReleaseMemObject_quiet(nbb->vx);
-    err |= clReleaseMemObject_quiet(nbb->vy);
-    err |= clReleaseMemObject_quiet(nbb->vz);
-    err |= clReleaseMemObject_quiet(nbb->ax);
-    err |= clReleaseMemObject_quiet(nbb->ay);
-    err |= clReleaseMemObject_quiet(nbb->az);
+    for(int i = 0; i < 3; ++i){
+      err |= clReleaseMemObject_quiet(nbb->pos[i]);
+      err |= clReleaseMemObject_quiet(nbb->vel[i]);
+      err |= clReleaseMemObject_quiet(nbb->acc[i]);
+      err |= clReleaseMemObject_quiet(nbb->max[i]);
+      err |= clReleaseMemObject_quiet(nbb->min[i]);
+
+    }
     err |= clReleaseMemObject_quiet(nbb->mass);
 
     if (err != CL_SUCCESS)
@@ -1794,15 +1793,13 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
     int n = st->effNBody;
     printf("Buffer Size: %d\n", n);
-    st->nbb->x = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->y = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->z = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->vx = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->vy = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->vz = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->ax = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->ay = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-    st->nbb->az = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    for(int i = 0; i < 3; ++i){
+      st->nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+      st->nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+      st->nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+      st->nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+      st->nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+    }
     st->nbb->mass = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
     // st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
     // st->nbb->output = clCreateBuffer(st->ci->clctx, CL_MEM_WRITE_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
@@ -2413,15 +2410,15 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
 
 void initGPUDataArrays(NBodyState* st, gpuData* gData){
   int n = st->effNBody;
-  gData->x = calloc(n, sizeof(real));
-  gData->y = calloc(n, sizeof(real));
-  gData->z = calloc(n, sizeof(real));
-  gData->vx = calloc(n, sizeof(real));
-  gData->vy = calloc(n, sizeof(real));
-  gData->vz = calloc(n, sizeof(real));
-  gData->ax = calloc(n, sizeof(real));
-  gData->ay = calloc(n, sizeof(real));
-  gData->az = calloc(n, sizeof(real));
+  for(int i = 0; i < 3; ++i){
+    gData->pos[i] = calloc(n, sizeof(real));
+    gData->vel[i] = calloc(n, sizeof(real));
+    gData->acc[i] = calloc(n, sizeof(real));
+    if(!st->usesExact){
+      gData->max[i] = calloc(n, sizeof(real));
+      gData->min[i] = calloc(n, sizeof(real));
+    }
+  }
   gData->mass = calloc(n, sizeof(real));
 }
 
@@ -2429,28 +2426,28 @@ void fillGPUDataOnlyBodies(NBodyState* st, gpuData* gData){
   int n = st->effNBody;
   for(int i = 0; i < n; ++i){
     if(i < st->nbody){
-      gData->x[i] = st->bodytab[i].bodynode.pos.x;
-      gData->y[i] = st->bodytab[i].bodynode.pos.y;
-      gData->z[i] = st->bodytab[i].bodynode.pos.z;
+      gData->pos[0][i] = st->bodytab[i].bodynode.pos.x;
+      gData->pos[1][i] = st->bodytab[i].bodynode.pos.y;
+      gData->pos[2][i] = st->bodytab[i].bodynode.pos.z;
+      gData->vel[0][i] = st->bodytab[i].vel.x;
+      gData->vel[1][i] = st->bodytab[i].vel.y;
+      gData->vel[2][i] = st->bodytab[i].vel.z;
+      gData->acc[0][i] = 0;
+      gData->acc[1][i] = 0;
+      gData->acc[2][i] = 0;
       gData->mass[i] = st->bodytab[i].bodynode.mass;
-      gData->vx[i] = st->bodytab[i].vel.x;
-      gData->vy[i] = st->bodytab[i].vel.y;
-      gData->vz[i] = st->bodytab[i].vel.z;
-      gData->ax[i] = 0;
-      gData->ay[i] = 0;
-      gData->az[i] = 0;
     }
     else{
-      gData->x[i] = 0;
-      gData->y[i] = 0;
-      gData->z[i] = 0;
+      gData->pos[0][i] = 0;
+      gData->pos[1][i] = 0;
+      gData->pos[2][i] = 0;
+      gData->vel[0][i] = 0;
+      gData->vel[1][i] = 0;
+      gData->vel[2][i] = 0; 
+      gData->acc[0][i] = 0;
+      gData->acc[1][i] = 0;
+      gData->acc[2][i] = 0;
       gData->mass[i] = 0;
-      gData->vx[i] = 0;
-      gData->vy[i] = 0;
-      gData->vz[i] = 0; 
-      gData->ax[i] = 0;
-      gData->ay[i] = 0;
-      gData->az[i] = 0;
     }
   }
 }
@@ -2462,51 +2459,23 @@ void writeGPUBuffers(NBodyState* st, gpuData* gData){
   cl_uint i;
   cl_command_queue q = st->ci->queue;
   int n = st->effNBody;
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->x,
+  for(int i = 0; i < 3; ++i){
+    err |= clEnqueueWriteBuffer(st->ci->queue,
+                          st->nbb->pos[i],
+                          CL_TRUE,
+                          0, n*sizeof(real), gData->pos[i],
+                          0, NULL, NULL);
+    err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->vel[i],
                         CL_TRUE,
-                        0, n*sizeof(real), gData->x,
+                        0, n*sizeof(real), gData->vel[i],
                         0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->y,
+    err |= clEnqueueWriteBuffer(st->ci->queue,
+                        st->nbb->acc[i],
                         CL_TRUE,
-                        0, n*sizeof(real), gData->y,
+                        0, n*sizeof(real), gData->acc[i],
                         0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->z,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->z,
-                        0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->vx,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->vx,
-                        0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->vy,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->vy,
-                        0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->vz,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->vz,
-                        0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->ax,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->ax,
-                        0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->ay,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->ay,
-                        0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(st->ci->queue,
-                        st->nbb->az,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->az,
-                        0, NULL, NULL);
+  }
   err |= clEnqueueWriteBuffer(st->ci->queue,
                         st->nbb->mass,
                         CL_TRUE,
@@ -2525,51 +2494,35 @@ void readGPUBuffers(NBodyState* st, gpuData* gData){
   cl_uint i;
   cl_command_queue q = st->ci->queue;
   int n = st->effNBody;
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->x,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->x,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->y,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->y,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->z,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->z,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->vx,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->vx,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->vy,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->vy,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->vz,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->vz,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->ax,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->ax,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->ay,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->ay,
-                        0, NULL, NULL);
-  err |= clEnqueueReadBuffer(st->ci->queue,
-                        st->nbb->az,
-                        CL_TRUE,
-                        0, n*sizeof(real), gData->az,
-                        0, NULL, NULL);
+  for(int i = 0; i < 3; ++i){
+    err |= clEnqueueReadBuffer(st->ci->queue,
+                          st->nbb->pos[i],
+                          CL_TRUE,
+                          0, n*sizeof(real), gData->pos[i],
+                          0, NULL, NULL);
+    err |= clEnqueueReadBuffer(st->ci->queue,
+                          st->nbb->vel[i],
+                          CL_TRUE,
+                          0, n*sizeof(real), gData->vel[i],
+                          0, NULL, NULL);
+    err |= clEnqueueReadBuffer(st->ci->queue,
+                          st->nbb->acc[i],
+                          CL_TRUE,
+                          0, n*sizeof(real), gData->acc[i],
+                          0, NULL, NULL);
+    if(!st->usesExact){
+      err |= clEnqueueReadBuffer(st->ci->queue,
+                            st->nbb->max[i],
+                            CL_TRUE,
+                            0, n*sizeof(real), gData->max[i],
+                            0, NULL, NULL);
+      err |= clEnqueueReadBuffer(st->ci->queue,
+                            st->nbb->min[i],
+                            CL_TRUE,
+                            0, n*sizeof(real), gData->min[i],
+                            0, NULL, NULL);
+    }
+  }
   err |= clEnqueueReadBuffer(st->ci->queue,
                         st->nbb->mass,
                         CL_TRUE,
@@ -2634,11 +2587,62 @@ NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st){
         return rc;
 }
 
+
+static cl_int nbBoundingBox(NBodyState* st, cl_bool updateState)
+{
+    cl_int err;
+    size_t chunk;
+    size_t nChunk;
+    cl_int upperBound;
+    size_t global[1];
+    size_t local[1];
+    size_t offset[1];
+    cl_event integrateEv;
+    cl_kernel boundingBox;
+    CLInfo* ci = st->ci;
+    NBodyKernels* kernels = st->kernels;
+    NBodyWorkSizes* ws = st->workSizes;
+    cl_int effNBody = st->effNBody;
+    
+    boundingBox = kernels->boundingBox;
+    global[0] = st->effNBody;
+    //printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
+    local[0] = 4;
+    
+    cl_event ev;
+    err = clEnqueueNDRangeKernel(ci->queue, boundingBox, 1,
+                                    0, global, local,
+                                    0, NULL, &ev);
+    if (err != CL_SUCCESS)
+        return err;
+    clWaitForEvents(1, &ev);
+    clFinish(ci->queue);
+    return CL_SUCCESS;
+}
+
 //TODO: Write Barnes-Hut kernel handler
 NBodyStatus nbRunSystemCLTreecode(const NBodyCtx* ctx, NBodyState* st)
 {
   printf("RUNNING OPENCL TREECODE NBODY APPLICATION\n");
+  CLInfo* ci = st->ci;   
+  cl_int err;
+  cl_uint i;
+  cl_command_queue q = st->ci->queue;
+  gpuData gData;
+  initGPUDataArrays(st, &gData);
+  fillGPUDataOnlyBodies(st, &gData);
+  int n = st->effNBody;
+  writeGPUBuffers(st, &gData);
 
+  err = nbBoundingBox(st, CL_TRUE);
+  if (err != CL_SUCCESS)
+  {
+      mwPerrorCL(err, "Error executing bounding box kernel");
+      return NBODY_CL_ERROR;
+  }
+  readGPUBuffers(st, &gData);
+  printf("MAX: %f, %f, %f\nMIN: %f, %f, %f\n", gData.max[0], gData.max[1], gData.max[2],
+                                                gData.min[0], gData.min[1], gData.min[2]);
 }
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
@@ -2693,14 +2697,14 @@ NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to stri
     // gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
     // printf("BODY ID: %d, POSITION: %f,%f,%f\n", 
     // gpuData[i].bodyID, gpuData[i].pos[0], gpuData[i].pos[1], gpuData[i].pos[2]);
-    st->bodytab[i].bodynode.pos.x = gData->x[i];
-    st->bodytab[i].bodynode.pos.y = gData->y[i];
-    st->bodytab[i].bodynode.pos.z = gData->z[i];
+    st->bodytab[i].bodynode.pos.x = gData->pos[0][i];
+    st->bodytab[i].bodynode.pos.y = gData->pos[1][i];
+    st->bodytab[i].bodynode.pos.z = gData->pos[2][i];
 
     st->bodytab[i].bodynode.bodyID = i;
-    st->bodytab[i].vel.x = gData->vx[0];
-    st->bodytab[i].vel.y = gData->vy[1];
-    st->bodytab[i].vel.z = gData->vz[2];
+    st->bodytab[i].vel.x = gData->vel[0][i];
+    st->bodytab[i].vel.y = gData->vel[1][i];
+    st->bodytab[i].vel.z = gData->vel[2][i];
 
     st->bodytab[i].bodynode.mass = gData->mass[i];
 

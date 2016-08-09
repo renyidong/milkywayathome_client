@@ -204,19 +204,15 @@ typedef struct MW_ALIGN_TYPE
 // } NBodyBuffers;
 
 typedef struct{
-    cl_mem x;
-    cl_mem y;
-    cl_mem z;
-
-    cl_mem vx;
-    cl_mem vy;
-    cl_mem vz;
-
-    cl_mem ax;
-    cl_mem ay;
-    cl_mem az;
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
 
     cl_mem mass;
+
+    cl_mem max[3];
+    cl_mem min[3];
+
 }NBodyBuffers;
 
 typedef struct
@@ -270,7 +266,7 @@ typedef struct
 //Old Kernels struct:
 typedef struct
 {
-//     cl_kernel boundingBox;
+    cl_kernel boundingBox;
 //     cl_kernel buildTreeClear;
 //     cl_kernel buildTree;
 //     cl_kernel summarizationClear;
@@ -320,19 +316,14 @@ typedef struct
 
 typedef struct
 {
-    real* x;
-    real* y;
-    real* z;
-
-    real* vx;
-    real* vy;
-    real* vz;
-
-    real* ax;
-    real* ay;
-    real* az;
+    real* pos[3];
+    real* vel[3];
+    real* acc[3];
 
     real* mass;
+
+    real* max[3];
+    real* min[3];
 
 }gpuData;
 
