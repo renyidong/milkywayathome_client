@@ -2581,8 +2581,8 @@ void readGPUBuffers(NBodyState* st, gpuData* gData){
   clFlush(st->ci->queue);
 }
 
-NBodyStatus nbRunSystemCLAlternate(const NBodyCtx* ctx, NBodyState* st){
-  printf("RUNNING ALTERNATE OPENCL EXACT APPLICATION\n");
+NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st){
+  printf("RUNNING OPENCL EXACT NBODY APPLICATION\n");
   CLInfo* ci = st->ci;   
   cl_int err;
   cl_uint i;
@@ -2634,109 +2634,11 @@ NBodyStatus nbRunSystemCLAlternate(const NBodyCtx* ctx, NBodyState* st){
         return rc;
 }
 
-NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
-{
-    
-    //Need to write to the buffer in this function
-    CLInfo* ci = st->ci;   
-    cl_int err;
-    cl_uint i;
-    cl_command_queue q = st->ci->queue;
-
-    st->dirty = TRUE;
-    
-    
-    //Write Buffer:
-    int buffSize = st->gpuTreeSize;
-    printf("Buffer Size: %d\n", buffSize);
-    //TODO: Figure out why buffer isn't being used by GPU
-    printf("DATA CHECK INITIAL: %.15f\n", gTreeIn[0].mass);
-    // err = clEnqueueWriteBuffer(st->ci->queue,
-    //                     st->nbb->input,
-    //                     CL_TRUE,
-    //                     0, buffSize*sizeof(gpuTree), gTreeIn,
-    //                     0, NULL, NULL);
-    if(err != CL_SUCCESS)
-        printf("%i, OH SHIT\n", err);
-    //RUN INITIAL ACCELERATION CALCULATION:
-    err = nbExecuteForceKernels(st, CL_TRUE);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error executing force kernels");
-        return NBODY_CL_ERROR;
-    }
-    //Set kernel arguments:
-    while(st->step < ctx->nStep){
-        //RUN ADVANCE VELOCITY
-      err = nbAdvanceHalfVelocity(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing half velocity kernels");
-          return NBODY_CL_ERROR;
-      }
-
-      // err = nbAdvancePosition(st, CL_TRUE);
-      // if (err != CL_SUCCESS)
-      // {
-      //     mwPerrorCL(err, "Error executing force kernels");
-      //     return NBODY_CL_ERROR;
-      // }
-
-      err = nbExecuteForceKernels(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing force kernels");
-          return NBODY_CL_ERROR;
-      }
-
-      // err = nbAdvanceHalfVelocity(st, CL_TRUE);
-      // if (err != CL_SUCCESS)
-      // {
-      //     mwPerrorCL(err, "Error executing half velocity kernels");
-      //     return NBODY_CL_ERROR;
-      // }
-
-      err = nbOutputData(st, CL_TRUE);
-      if (err != CL_SUCCESS)
-      {
-          mwPerrorCL(err, "Error executing data output kernels");
-          return NBODY_CL_ERROR;
-      }
-
-      ++st->step;
-    }
-    //Read buffer from GPU
-    // err = clEnqueueReadBuffer(st->ci->queue,
-    //                     st->nbb->output,
-    //                     CL_TRUE,
-    //                     0, buffSize*sizeof(gpuTree), gTreeOut,
-    //                     0, NULL, NULL);
-    if(err != CL_SUCCESS)
-        printf("%i, OH SHIT\n", err);
-    
-    printf("DATA CHECK POST: %.15f\n", gTreeOut[0].mass);
-//     if(gTreeOut[10].isBody){
-//         printf("Position: %f | %f \n", gTreeIn[10].pos[0], gTreeOut[10].pos[0]);
-//         printf("Velocity: %f | %f \n", gTreeIn[10].vel[0], gTreeOut[10].vel[0]);
-//         printf("Acceleration: %f | %f \n", gTreeIn[10].acc[0], gTreeOut[10].acc[0]);
-//         printf("---------------------------------------\n");
-//     }
-    
-    printf("BEGINNING STRIP\n");
-    nbStripBodies(st, gTreeOut);
-    printf("BODIES STRIPPED\n");
-    NBodyStatus rc = nbMakeTree(ctx, st);
-    if (nbStatusIsFatal(rc))
-        return rc;
-
-    printf("TREE RECONSTRUCTION COMPLETE\n");
-    
-
-    return NBODY_SUCCESS;
-}
 //TODO: Write Barnes-Hut kernel handler
-NBodyStatus nbRunSystemCLBarnesHut(const NBodyCtx* ctx, NBodyState* st, gpuTree* gTreeIn, gpuTree* gTreeOut)
+NBodyStatus nbRunSystemCLTreecode(const NBodyCtx* ctx, NBodyState* st)
 {
+  printf("RUNNING OPENCL TREECODE NBODY APPLICATION\n");
+
 }
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
@@ -2783,8 +2685,8 @@ NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to stri
     //   i, gData->ax[i], gData->ay[i], gData->az[i]);
     // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
     //   i, gData->vx[i], gData->vy[i], gData->vz[i]);
-    printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
-      i, gData->x[i], gData->y[i], gData->z[i]);
+    // printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
+    //   i, gData->x[i], gData->y[i], gData->z[i]);
     // printf("BODY ID: %d, MASS: %.15f\n", 
     //   i, gData->mass[i]);
     // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
@@ -2809,10 +2711,10 @@ NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to stri
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     if(ctx->criterion != Exact){
-
+      nbRunSystemCLTreecode(ctx, st);
     }
     else{
-      nbRunSystemCLAlternate(ctx, st);
+      nbRunSystemCLExact(ctx, st);
     }
     return nbWriteFinalCheckpoint(ctx, st);
 }
