@@ -2808,34 +2808,12 @@ NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to stri
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
-    //FILL GPU VECTOR:
-    printf("GPU TREE SIZE: %d\n", st->gpuTreeSize);
-    const Body* b = &st->bodytab[1];
-    mwvector a = Pos(b);
-    printf(">>>>> %f  <<<<< \n", a.x);
+    if(ctx->criterion != Exact){
 
-    //Create Buffer:
-    int n = st->gpuTreeSize;
-    gpuTree* gTreeIn = malloc(n*sizeof(gpuTree));
-    gpuTree* gTreeOut = malloc(n*sizeof(gpuTree));
-    
-    fillGPUTreeOnlyBodies(ctx, st, gTreeIn); //Fill GPU Tree headed to the GPU
-    
-    printf("%i\n", st->tree.cellUsed);
-    printf("%i\n", st->effNBody);
-    
-    ////////////////////
-    //RUN SYSTEM:
-    ////////////////////
-    
-    //RUN BRUTE FORCE SYSTEM:
-    //nbRunSystemCLExact(ctx, st, gTreeIn, gTreeOut);
-    nbRunSystemCLAlternate(ctx, st);
-    //RUN BARNES-HUT SYSTEM:
-    //nbRunSystemCLBarnesHut(ctx, st, gTreeIn, gTreeOut);
-    
-    free(gTreeIn);
-    free(gTreeOut);
+    }
+    else{
+      nbRunSystemCLAlternate(ctx, st);
+    }
     return nbWriteFinalCheckpoint(ctx, st);
 }
 

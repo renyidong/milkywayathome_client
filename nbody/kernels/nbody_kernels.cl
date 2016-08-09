@@ -1319,7 +1319,6 @@ __kernel void advanceHalfVelocity(RVPtr x, RVPtr y, RVPtr z,
                                     RVPtr mass){
   int a = get_global_id(0);
   real dtHalf = 0.5 * TIMESTEP;
-
   vx[a] = mad(dtHalf, ax[a], vx[a]);
   vy[a] = mad(dtHalf, ay[a], vy[a]);
   vz[a] = mad(dtHalf, az[a], vz[a]);
@@ -1358,9 +1357,6 @@ __kernel void advancePosition(RVPtr x, RVPtr y, RVPtr z,
                               RVPtr ax, RVPtr ay, RVPtr az,
                               RVPtr mass){
   int a = get_global_id(0);
-  // x[a] = 10;
-  // y[a] = 10;
-  // z[a] = 10;
   x[a] = mad(TIMESTEP, vx[a], x[a]);
   y[a] = mad(TIMESTEP, vy[a], y[a]);
   z[a] = mad(TIMESTEP, vz[a], z[a]);
@@ -1386,4 +1382,17 @@ __kernel void outputData(RVPtr x, RVPtr y, RVPtr z,
                         RVPtr mass){
   int a = get_global_id(0);
 
+}
+
+
+
+////////////////////////////////////
+// GPU TREECODE 
+////////////////////////////////////
+
+__kernel void boundingBox(RVPtr x, RVPtr y, RVPtr z,
+                        RVPtr vx, RVPtr vy, RVPtr vz,
+                        RVPtr ax, RVPtr ay, RVPtr az,
+                        RVPtr mass){
+  int a = get_global_id(0);
 }
