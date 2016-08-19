@@ -2657,8 +2657,8 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
     int minimumBID = n;
     for(int i = 0; i < n; ++i){
         if(gpuData[i].isBody == 1){
-          // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
-          // gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
+           // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
+           // gpuData[i].bodyID, gpuData[i].acc[0], gpuData[i].acc[1], gpuData[i].acc[2]);
           // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
           // gpuData[i].bodyID, gpuData[i].vel[0], gpuData[i].vel[1], gpuData[i].vel[2]);
           // printf("BODY ID: %d, POSITION: %f,%f,%f\n", 
@@ -2683,14 +2683,13 @@ NBodyStatus nbStripBodies(NBodyState* st, gpuTree* gpuData){ //Function to strip
 NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to strip bodies out of GPU Tree
   printf("STRIPPING BODIES FROM BUFFER STRUCTURE\n");
   int n = st->nbody;
-  int minimumBID = n;
   for(int i = 0; i < n; ++i){
     // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
-    //   i, gData->ax[i], gData->ay[i], gData->az[i]);
+    //   i, gData->acc[0], gData->acc[1], gData->acc[2]);
     // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
-    //   i, gData->vx[i], gData->vy[i], gData->vz[i]);
-    // printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
-    //   i, gData->x[i], gData->y[i], gData->z[i]);
+    //   i, gData->vel[0], gData->vel[1], gData->vel[2]);
+    printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
+      i, gData->pos[0], gData->pos[1], gData->pos[2]);
     // printf("BODY ID: %d, MASS: %.15f\n", 
     //   i, gData->mass[i]);
     // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 
@@ -2709,7 +2708,6 @@ NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to stri
     st->bodytab[i].bodynode.mass = gData->mass[i];
 
   }
-  printf("MinValue: %d\n", minimumBID);
 }
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)

@@ -1275,6 +1275,13 @@ __kernel void forceCalculationExact(RVPtr x, RVPtr y, RVPtr z,
     ax[a] += ai * drVec[0];
     ay[a] += ai * drVec[1];
     az[a] += ai * drVec[2];
+    if(USE_EXTERNAL_POTENTIAL)
+    {
+      real4 externAcc = externalAcceleration(x[a], y[a], z[a]);
+      ax[a] += externAcc.x;
+      ay[a] += externAcc.y;
+      az[a] += externAcc.z;
+    }
 
   }
 

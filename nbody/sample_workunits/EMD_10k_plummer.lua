@@ -12,14 +12,19 @@ r0  = arg[3]
 
 dwarfMass  = arg[4]
 
-model1Bodies = 1000
+model1Bodies = 10000
 totalBodies = model1Bodies
 
 nbodyLikelihoodMethod = "EMD"
 nbodyMinVersion = "1.32"
 
 function makePotential()
-   return  nil
+  return nil
+  -- return Potential.create{
+  --     spherical = Spherical.spherical{ mass = 67479.9, scale = 0.6 },
+  --     disk      = Disk.exponential{ mass = 224933, scaleLength = 4 },
+  --     halo      = Halo.nfw{ vhalo = 120, scaleLength = 22.25 }
+  -- }
 end
 
 encMass = plummerTimestepIntegral(r0, sqr(r0) + sqr(r0/arg[4]) , dwarfMass, 1e-7)
@@ -38,7 +43,7 @@ end
 -- Also required
 function makeBodies(ctx, potential)
     local firstModel
-    local finalPosition, finalVelocity = Vector.create(0,0,0), Vector.create(0,0,0)
+    local finalPosition, finalVelocity = Vector.create(20,0,0), Vector.create(0,5,0)
 
     firstModel = predefinedModels.plummer{
         nbody       = model1Bodies,
@@ -60,6 +65,15 @@ end
 
 function makeHistogram()
    return HistogramParams.create()
+    -- phi = 
+    -- theta = 
+    -- psi = 
+    -- lambdaStart = 
+    -- lambdaEnd = 
+    -- lambdaBins =
+    -- betaStart = 
+    -- betaEnd = 
+    -- betaBins = )
 end
 
 

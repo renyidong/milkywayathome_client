@@ -11,6 +11,10 @@ input = sys.argv[1];
 g = open(input, 'r');
 x1 = [];
 y1 = [];
+z1 = [];
+vx1 = [];
+vy1 = [];
+vz1 = [];
 bID1 = [];
 g.next()
 g.next()
@@ -21,6 +25,10 @@ for line in g:
  ln = line.split(',');
  x1.append(float(ln[1]));
  y1.append(float(ln[2]));
+ z1.append(float(ln[3]));
+ vx1.append(float(ln[4]));
+ vy1.append(float(ln[5]));
+ vz1.append(float(ln[6]));
  bID1.append(int(ln[8]));
 
 x1s = [None]*len(bID1);
@@ -34,8 +42,8 @@ for i in range(len(x1)):
 
 plt.subplot(221)
 plt.plot(x1s,y1s, 'ob', label="GPU Data")
-plt.xlim([-5,5])
-plt.ylim([-5,5])
+# plt.xlim([-100,100])
+# plt.ylim([-100,100])
 legend = plt.legend(loc="upper right")
 
 
@@ -44,6 +52,10 @@ input = sys.argv[2];
 f = open(input, 'r');
 x2 = [];
 y2 = [];
+z2 = [];
+vx2 = [];
+vy2 = [];
+vz2 = [];
 bID2 = [];
 
 f.next()
@@ -55,6 +67,10 @@ for line in f:
  ln = line.split(',');
  x2.append(float(ln[1]));
  y2.append(float(ln[2]));
+ z2.append(float(ln[3]));
+ vx2.append(float(ln[4]));
+ vy2.append(float(ln[5]));
+ vz2.append(float(ln[6]));
  bID2.append(int(ln[8]));
 
 x2s = [None]*len(bID2);
@@ -68,8 +84,8 @@ print "Number of bodies in y list: " + str(len(y2))
 
 plt.subplot(222)
 plt.plot(x2,y2, 'ob', label="CPU Data");
-plt.xlim([-5,5])
-plt.ylim([-5,5])
+# plt.xlim([-100,100])
+# plt.ylim([-100,100])
 legend = plt.legend(loc="upper right")
 x3 = []
 y3 = []
