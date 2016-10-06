@@ -103,11 +103,11 @@ function makeHistogram()
      phi = 128.79,
      theta = 54.39,
      psi = 90.70,
-     lambdaStart = -150,
-     lambdaEnd = 150,
+     lambdaStart = -180,
+     lambdaEnd = 180,
      lambdaBins = 50,
-     betaStart = -40,
-     betaEnd = 40,
+     betaStart = -180,
+     betaEnd = 180,
      betaBins = 1
 }
 end

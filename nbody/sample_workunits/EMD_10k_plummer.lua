@@ -12,7 +12,7 @@ r0  = arg[3]
 
 dwarfMass  = arg[4]
 
-model1Bodies = 10000
+model1Bodies = 100
 totalBodies = model1Bodies
 
 nbodyLikelihoodMethod = "EMD"
@@ -39,12 +39,22 @@ function makeContext()
       theta      = 1.0
    }
 end
-
+l = 218
+b = 53.5
+r = 28.6
 -- Also required
 function makeBodies(ctx, potential)
     local firstModel
-    local finalPosition, finalVelocity = Vector.create(20,0,0), Vector.create(0,5,0)
+    position = lbrToCartesian(ctx, Vector.create(l,b,r))
+    local finalPosition, finalVelocity = position, Vector.create(0,0,0)
 
+  -- local finalPosition, finalVelocity = reverseOrbit{
+  --       potential = potential,
+  --       position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6)),
+  --       velocity  = Vector.create(-156, 79, 107),
+  --       tstop     = reverseOrbitTime,
+  --       dt        = ctx.timestep / 10.0
+  --   }
     firstModel = predefinedModels.plummer{
         nbody       = model1Bodies,
         prng        = prng,
@@ -64,16 +74,16 @@ return firstModel
 end
 
 function makeHistogram()
-   return HistogramParams.create()
-    -- phi = 
-    -- theta = 
-    -- psi = 
-    -- lambdaStart = 
-    -- lambdaEnd = 
-    -- lambdaBins =
-    -- betaStart = 
-    -- betaEnd = 
-    -- betaBins = )
+   return HistogramParams.create{
+    phi = 128.79,
+    theta = 54.39,
+    psi = 90.70,
+    lambdaStart = -10,
+    lambdaEnd = 10,
+    lambdaBins = 100,
+    betaStart = -180,
+    betaEnd = -180,
+    betaBins = 1}
 end
 
 
