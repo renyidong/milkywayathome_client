@@ -1414,28 +1414,28 @@ __kernel void boundingBox(RVPtr x, RVPtr y, RVPtr z,
   if(x[a] > *xMax){
     *xMax = x[a];
   }
-  if(x[a] < *xMax){
+  if(x[a] < *xMin){
     *xMin = x[a];
   }
 
   if(y[a] > *yMax){
     *yMax = y[a];
   }
-  if(y[a] < *yMax){
+  if(y[a] < *yMin){
     *yMin = y[a];
   }
 
-  if(z[a] > *xMax){
+  if(z[a] > *zMax){
     *zMax = z[a];
   }
-  if(z[a] < *zMax){
+  if(z[a] < *zMin){
     *zMin = z[a];
   }
-  *xMin = -10;
-  *yMin = -10;
-  *zMin = -10;
-  *xMax = 10;
-  *yMax = 10;
-  *zMax = 10;
+  // *xMin = -10;
+  // *yMin = -10;
+  // *zMin = -10;
+  // *xMax = 10;
+  // *yMax = 10;
+  // *zMax = 10;
 
 }

@@ -1796,9 +1796,11 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     for(int i = 0; i < 3; ++i){
       st->nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
       st->nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-      st->nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-      st->nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
-      st->nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
+      st->nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));      
+      if(!st->usesExact){
+        st->nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+        st->nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+      }
     }
     st->nbb->mass = mwCreateZeroReadWriteBuffer(ci, n * sizeof(real));
     // st->nbb->input = clCreateBuffer(st->ci->clctx, CL_MEM_READ_ONLY, buffSize*sizeof(gpuTree), NULL, NULL);
@@ -2409,21 +2411,21 @@ void fillGPUTree(const NBodyCtx* ctx, NBodyState* st, gpuTree* gpT){
 }
 
 void initGPUDataArrays(NBodyState* st, gpuData* gData){
-  int n = st->effNBody;
+  int n = st->gpuTreeSize;
   for(int i = 0; i < 3; ++i){
     gData->pos[i] = calloc(n, sizeof(real));
     gData->vel[i] = calloc(n, sizeof(real));
     gData->acc[i] = calloc(n, sizeof(real));
     if(!st->usesExact){
-      gData->max[i] = calloc(n, sizeof(real));
-      gData->min[i] = calloc(n, sizeof(real));
+      // gData->max[i] = calloc(n, sizeof(real));
+      // gData->min[i] = calloc(n, sizeof(real));
     }
   }
   gData->mass = calloc(n, sizeof(real));
 }
 
 void fillGPUDataOnlyBodies(NBodyState* st, gpuData* gData){
-  int n = st->effNBody;
+  int n = st->gpuTreeSize;
   for(int i = 0; i < n; ++i){
     if(i < st->nbody){
       gData->pos[0][i] = st->bodytab[i].bodynode.pos.x;
@@ -2453,7 +2455,7 @@ void fillGPUDataOnlyBodies(NBodyState* st, gpuData* gData){
 }
 
 void writeGPUBuffers(NBodyState* st, gpuData* gData){
-  printf("WRITING TO GPU BUFFERS\n");
+  printf("WRITING TO GPU BUFFERS: %f\n", gData->max[0]);
   CLInfo* ci = st->ci;   
   cl_int err = CL_SUCCESS;
   cl_uint i;
@@ -2475,6 +2477,18 @@ void writeGPUBuffers(NBodyState* st, gpuData* gData){
                         CL_TRUE,
                         0, n*sizeof(real), gData->acc[i],
                         0, NULL, NULL);
+    if(!st->usesExact){
+        err |= clEnqueueReadBuffer(st->ci->queue,
+                            st->nbb->max[i],
+                            CL_TRUE,
+                            0, sizeof(real), &(gData->max[i]),
+                            0, NULL, NULL);
+        err |= clEnqueueReadBuffer(st->ci->queue,
+                            st->nbb->min[i],
+                            CL_TRUE,
+                            0, sizeof(real), &(gData->min[i]),
+                            0, NULL, NULL);
+    }
   }
   err |= clEnqueueWriteBuffer(st->ci->queue,
                         st->nbb->mass,
@@ -2511,15 +2525,15 @@ void readGPUBuffers(NBodyState* st, gpuData* gData){
                           0, n*sizeof(real), gData->acc[i],
                           0, NULL, NULL);
     if(!st->usesExact){
-      err |= clEnqueueReadBuffer(st->ci->queue,
+        err |= clEnqueueReadBuffer(st->ci->queue,
                             st->nbb->max[i],
                             CL_TRUE,
-                            0, n*sizeof(real), gData->max[i],
+                            0, sizeof(real), &(gData->max[i]),
                             0, NULL, NULL);
-      err |= clEnqueueReadBuffer(st->ci->queue,
+        err |= clEnqueueReadBuffer(st->ci->queue,
                             st->nbb->min[i],
                             CL_TRUE,
-                            0, n*sizeof(real), gData->min[i],
+                            0, sizeof(real), &(gData->min[i]),
                             0, NULL, NULL);
     }
   }
@@ -2536,6 +2550,7 @@ void readGPUBuffers(NBodyState* st, gpuData* gData){
 
 NBodyStatus nbRunSystemCLExact(const NBodyCtx* ctx, NBodyState* st){
   printf("RUNNING OPENCL EXACT NBODY APPLICATION\n");
+  printf("THE GPU TREE SIZE IS: %d\n", st->effNBody);
   CLInfo* ci = st->ci;   
   cl_int err;
   cl_uint i;
@@ -2597,16 +2612,16 @@ static cl_int nbBoundingBox(NBodyState* st, cl_bool updateState)
     size_t global[1];
     size_t local[1];
     size_t offset[1];
-    cl_event integrateEv;
+    cl_event boundingEv;
     cl_kernel boundingBox;
     CLInfo* ci = st->ci;
     NBodyKernels* kernels = st->kernels;
     NBodyWorkSizes* ws = st->workSizes;
     cl_int effNBody = st->effNBody;
+
     
     boundingBox = kernels->boundingBox;
-    global[0] = st->effNBody;
-    //printf("GLOBAL WORKGROUP SIZE: %d\n", global[0]);
+    global[0] = st->gpuTreeSize;
     local[0] = 4;
     
     cl_event ev;
@@ -2624,12 +2639,17 @@ static cl_int nbBoundingBox(NBodyState* st, cl_bool updateState)
 NBodyStatus nbRunSystemCLTreecode(const NBodyCtx* ctx, NBodyState* st)
 {
   printf("RUNNING OPENCL TREECODE NBODY APPLICATION\n");
+  printf("THE GPU TREE SIZE IS: %d\n", st->effNBody);
   CLInfo* ci = st->ci;   
   cl_int err;
   cl_uint i;
   cl_command_queue q = st->ci->queue;
   gpuData gData;
   initGPUDataArrays(st, &gData);
+  for(int i = 0; i < 3; ++i){
+    gData.max[i] = 100;
+    gData.min[i] = 200;
+  }
   fillGPUDataOnlyBodies(st, &gData);
   int n = st->effNBody;
   writeGPUBuffers(st, &gData);
@@ -2641,8 +2661,13 @@ NBodyStatus nbRunSystemCLTreecode(const NBodyCtx* ctx, NBodyState* st)
       return NBODY_CL_ERROR;
   }
   readGPUBuffers(st, &gData);
-  printf("MAX: %f, %f, %f\nMIN: %f, %f, %f\n", gData.max[0], gData.max[1], gData.max[2],
+  printf("----------------------------\n");
+  printf("BOUNDING BOX:\n");
+  printf("        X        Y       Z\n");
+  printf("----------------------------\n");
+  printf("MAX: %.2f | %.2f | %.2f\nMIN: %.2f | %.2f | %.2f\n", gData.max[0], gData.max[1], gData.max[2],
                                                 gData.min[0], gData.min[1], gData.min[2]);
+  printf("----------------------------\n");
 }
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
@@ -2688,8 +2713,8 @@ NBodyStatus nbStripBodiesSoA(NBodyState* st, gpuData* gData){ //Function to stri
     //   i, gData->acc[0], gData->acc[1], gData->acc[2]);
     // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
     //   i, gData->vel[0], gData->vel[1], gData->vel[2]);
-    printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
-      i, gData->pos[0], gData->pos[1], gData->pos[2]);
+    // printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
+    //   i, gData->pos[0], gData->pos[1], gData->pos[2]);
     // printf("BODY ID: %d, MASS: %.15f\n", 
     //   i, gData->mass[i]);
     // printf("BODY ID: %d, VELOCITY: %f,%f,%f\n", 

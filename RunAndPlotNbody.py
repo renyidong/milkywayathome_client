@@ -6,23 +6,26 @@ import sys
 import pylab as lab
 import subprocess
 
-timesteps = 10000
-print "RUNNING GPU SYSTEM:"
+timesteps = 100
+
 os.system('rm GPUBRUTE.out')
 os.system('rm CPUBRUTE.out')
 os.system('rm GPUACCTEST.out')
 os.system('rm CPUACCTEST.out')
-os.system("cmake -DNBODY_OPENCL=ON -DDOUBLEPREC=ON -DCMAKE_BUILD_TYPE=RELEASE ")
-os.system('make')
-executeString = './bin/milkyway_nbody -f nbody/sample_workunits/EMD_10k_plummer.lua -o GPUBRUTE.out -z GPU.hist -x -i -e 36912 ' + str(timesteps) + ' 1 .2 12 >> GPUACCTEST.out'
-os.system(executeString)
-
 
 print "RUNNING CPU SYSTEM:"
 os.system("cmake -DNBODY_OPENCL=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=OFF -DCMAKE_BUILD_TYPE=RELEASE")
 os.system('make')
-executeString = './bin/milkyway_nbody -f nbody/sample_workunits/EMD_10k_plummer.lua -o CPUBRUTE.out -z CPU.hist -x -i -e 36912 ' + str(timesteps) + ' 1 .2 12 >> CPUACCTEST.out'
+executeString = './bin/milkyway_nbody -f nbody/sample_workunits/EMD_10k_plummer.lua -o CPUBRUTE.out -z CPU.hist -x -i -e 12693 ' + str(timesteps) + ' 1 .2 12' #>> CPUACCTEST.out'
 os.system(executeString)
+
+print "RUNNING GPU SYSTEM:"
+os.system("cmake -DNBODY_OPENCL=ON -DDOUBLEPREC=ON -DCMAKE_BUILD_TYPE=RELEASE ")
+os.system('make')
+executeString = './bin/milkyway_nbody -f nbody/sample_workunits/EMD_10k_plummer.lua -o GPUBRUTE.out -z GPU.hist -x -i -e 36912 ' + str(timesteps) + ' 1 .2 12' #>> GPUACCTEST.out'
+os.system(executeString)
+
+
 print "==========================FILE DIFF===============================\n"
 os.system('diff CPUACCTEST.out GPUACCTEST.out')
 print "==================================================================\n"

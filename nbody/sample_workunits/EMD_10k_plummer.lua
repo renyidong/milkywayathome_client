@@ -34,7 +34,7 @@ function makeContext()
       timeEvolve = evolveTime * sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       eps2       = calculateEps2(totalBodies, r0),
-      criterion  = "Exact",
+      criterion  = "NewCriterion",
       useQuad    = true,
       theta      = 1.0
    }

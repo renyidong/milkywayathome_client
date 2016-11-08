@@ -189,17 +189,17 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         nbUpdateDisplayedBodies(ctx, st);
     }
 
-    for(int i = 0; i < st->nbody; ++i){
-        // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
-        //  st->bodytab[i].bodynode.bodyID, st->acctab[i].x, st->acctab[i].y, st->acctab[i].z);
-        // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
-        //  st->bodytab[i].bodynode.bodyID, st->bodytab[i].vel.x, st->bodytab[i].vel.y, st->bodytab[i].vel.z);
-        printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
-         st->bodytab[i].bodynode.bodyID, st->bodytab[i].bodynode.pos.x, st->bodytab[i].bodynode.pos.y, st->bodytab[i].bodynode.pos.z);
-        //printf("BODY ID: %d, MASS: %.15f\n", 
-        // st->bodytab[i].bodynode.bodyID, st->bodytab[i].bodynode.mass);
+    // for(int i = 0; i < st->nbody; ++i){
+    //     // printf("BODY ID: %d, ACCELERATION: %.15f,%.15f,%.15f\n", 
+    //     //  st->bodytab[i].bodynode.bodyID, st->acctab[i].x, st->acctab[i].y, st->acctab[i].z);
+    //     // printf("BODY ID: %d, VELOCITY: %.15f,%.15f,%.15f\n", 
+    //     //  st->bodytab[i].bodynode.bodyID, st->bodytab[i].vel.x, st->bodytab[i].vel.y, st->bodytab[i].vel.z);
+    //     printf("BODY ID: %d, POSITION: %.15f,%.15f,%.15f\n", 
+    //      st->bodytab[i].bodynode.bodyID, st->bodytab[i].bodynode.pos.x, st->bodytab[i].bodynode.pos.y, st->bodytab[i].bodynode.pos.z);
+    //     //printf("BODY ID: %d, MASS: %.15f\n", 
+    //     // st->bodytab[i].bodynode.bodyID, st->bodytab[i].bodynode.mass);
 
-    }   
+    // }   
     #ifdef NBODY_BLENDER_OUTPUT
         blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
     #endif

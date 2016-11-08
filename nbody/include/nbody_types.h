@@ -322,8 +322,8 @@ typedef struct
 
     real* mass;
 
-    real* max[3];
-    real* min[3];
+    real max[3];
+    real min[3];
 
 }gpuData;
 
