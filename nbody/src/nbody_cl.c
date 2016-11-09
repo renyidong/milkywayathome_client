@@ -804,7 +804,7 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
     return CL_TRUE;
 }
 
-//NOTE: NOT NEEDED FOR CURRENT IMPLEMENTATOIN?
+//NOTE: NOT NEEDED FOR CURRENT IMPLEMENTATION?
 // static cl_int nbEnqueueReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb, cl_bool blocking)
 // {
 //     return clEnqueueReadBuffer(ci->queue,
@@ -2478,12 +2478,12 @@ void writeGPUBuffers(NBodyState* st, gpuData* gData){
                         0, n*sizeof(real), gData->acc[i],
                         0, NULL, NULL);
     if(!st->usesExact){
-        err |= clEnqueueReadBuffer(st->ci->queue,
+        err |= clEnqueueWriteBuffer(st->ci->queue,
                             st->nbb->max[i],
                             CL_TRUE,
                             0, sizeof(real), &(gData->max[i]),
                             0, NULL, NULL);
-        err |= clEnqueueReadBuffer(st->ci->queue,
+        err |= clEnqueueWriteBuffer(st->ci->queue,
                             st->nbb->min[i],
                             CL_TRUE,
                             0, sizeof(real), &(gData->min[i]),
