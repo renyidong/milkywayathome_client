@@ -27,14 +27,14 @@ function makePotential()
   -- }
 end
 
-encMass = plummerTimestepIntegral(r0, sqr(r0) + sqr(r0/arg[4]) , dwarfMass, 1e-7)
+encMass = plummerTimestepIntegral(r0, sqr(r0) + sqr(r0/arg[4]) , dwarfMass, 1e-5)
 
 function makeContext()
    return NBodyCtx.create{
       timeEvolve = evolveTime * sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       eps2       = calculateEps2(totalBodies, r0),
-      criterion  = "NewCriterion",
+      criterion  = "EXACT",
       useQuad    = true,
       theta      = 1.0
    }
