@@ -1402,40 +1402,29 @@ __kernel void boundingBox(RVPtr x, RVPtr y, RVPtr z,
                         RVPtr mass, RVPtr xMax, RVPtr yMax,
                         RVPtr zMax, RVPtr xMin, RVPtr yMin,
                         RVPtr zMin){
-  int a = get_global_id(0);
-  if(a == 0){
-    *xMin = INFINITY;
-    *yMin = INFINITY;
-    *zMin = INFINITY;
-    *xMax = -INFINITY;
-    *yMax = -INFINITY;
-    *zMax = -INFINITY;
-  }
-  if(x[a] > *xMax){
-    *xMax = x[a];
-  }
-  if(x[a] < *xMin){
-    *xMin = x[a];
+ 
+  uint g = (uint) get_global_id(0);
+  uint l = (uint) get_local_id(0);
+
+  __local volatile real dMinX[EFFNBODY], dMinY[EFFNBODY], dMinZ[EFFNBODY];
+  __local volatile real dMaxX[EFFNBODY], dMaxY[EFFNBODY], dMaxZ[EFFNBODY];
+
+  if(g == 0){
+    dMinX[0] = x[0];
+    dMinY[0] = y[0];
+    dMinZ[0] = z[0];
   }
 
-  if(y[a] > *yMax){
-    *yMax = y[a];
-  }
-  if(y[a] < *yMin){
-    *yMin = y[a];
-  }
+  barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
-  if(z[a] > *zMax){
-    *zMax = z[a];
-  }
-  if(z[a] < *zMin){
-    *zMin = z[a];
-  }
-  // *xMin = -10;
-  // *yMin = -10;
-  // *zMin = -10;
-  // *xMax = 10;
-  // *yMax = 10;
-  // *zMax = 10;
+  dMinX[g] = dMaxX[g] = dMinX[0];
+  dMinY[g] = dMaxY[g] = dMinY[0];
+  dMinZ[g] = dMaxZ[g] = dMinZ[0];
 
+  *xMin = get_local_size(0);
+  *xMax = get_num_groups(0);
+  *yMin = 10.0;
+  *yMax = 10.0;
+  *zMin = 10.0;
+  *zMax = 10.0;
 }
