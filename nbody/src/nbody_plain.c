@@ -119,6 +119,7 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 /* stepSystem: advance N-body system one time-step. */
 NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 {
+
     NBodyStatus rc;
     const real dt = ctx->timestep;
 

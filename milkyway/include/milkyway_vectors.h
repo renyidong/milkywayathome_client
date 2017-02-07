@@ -39,11 +39,6 @@ typedef struct MW_ALIGN_TYPE_V(4 * sizeof(real))
 #define Z(v) ((v).z)
 #define W(v) ((v).w)
 
-/* Cylinderical Macros */
-#define CR(v) ((v).x)
-#define CT(v) ((v).y)
-#define CZ(v) ((v).z)
-
 
 #define mw_vec(x, y, z) { (x), (y), (z), 0.0 }
 
@@ -192,6 +187,15 @@ static inline real mw_vecangle(mwvector a, mwvector b)
     dot = mw_dotv(a, b);
 
     return mw_acos(dot / (anorm * bnorm));
+}
+
+CONST_F
+static inline mwvector mw_mulsv(mwvector u, real v){ // multiply by a scalar
+	mwvector tmp;
+	tmp.x = u.x * v;
+	tmp.y = u.y * v;
+	tmp.z = u.z * v;
+	return tmp;
 }
 
 
