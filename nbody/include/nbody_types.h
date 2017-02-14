@@ -395,6 +395,8 @@ typedef struct MW_ALIGN_TYPE
     unsigned int nStep;
 
     Potential pot;
+
+    float ramp; /*ramping parameter fraction*/
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
@@ -467,7 +469,7 @@ typedef enum
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
                          FALSE, FALSE, FALSE,                           \
                          0, 0,                                          \
-                         EMPTY_POTENTIAL }
+                         EMPTY_POTENTIAL, 0}
 
 typedef enum
 {

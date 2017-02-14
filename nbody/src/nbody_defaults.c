@@ -43,7 +43,8 @@ const NBodyCtx defaultNBodyCtx =
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
 
-    /* .pot             */  EMPTY_POTENTIAL
+    /* .pot             */  EMPTY_POTENTIAL,
+    /* .ramp            */  0
 };
 
 const HistogramParams defaultHistogramParams =

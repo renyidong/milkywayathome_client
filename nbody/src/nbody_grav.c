@@ -133,7 +133,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
 
-    real ramp_frac = (real)ctx->nStep * 0.05; //number of timesteps we want the ramping parameter to take
+    real ramp_frac = (real)ctx->nStep * (real)ctx->ramp; //number of timesteps we want the ramping parameter to take
 
 
 
@@ -152,14 +152,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
 		
-
+		externAcc = nbExtAcceleration(&ctx->pot,  Pos(b));
 		if(st->step < ramp_frac){// ramp potential
 
-                    externAcc = mw_mulsv(nbExtAcceleration(&ctx->pot, Pos(b)), (real)st->step/(real)ramp_frac);
-		    printf("Timestep: %i \n", st->step);
-		}
-		else{
-		    externAcc =nbExtAcceleration(&ctx->pot, Pos(b));
+                    externAcc = mw_mulsv(externAcc, (real)st->step/(real)ramp_frac);
 		}
                 mw_incaddv(a, externAcc);
                 accels[i] = a;

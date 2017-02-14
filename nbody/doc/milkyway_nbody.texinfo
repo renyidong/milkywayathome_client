@@ -487,6 +487,8 @@ Simulation context controlling simulation parameters such as timesteps.
 @end deftypeivar
 @deftypeivar NBodyCtx boolean quietErrors
 @end deftypeivar
+@deftypeivar NbodyCtx float ramp
+@end deftypeivar
 
 
 @defmethod NBodyCtx create(argTable)
@@ -526,6 +528,9 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab @code{boolean}
 @tab Silence printing of certain errors, such as tree incest.
      Most useful when treating incest as non-fatal.
+@item @code{ramp}*
+@tab @code{float}
+@tab Fraction corresponding to percent of simulation the ramping should take
 @end multitable
 @end defmethod
 
